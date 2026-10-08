@@ -97,7 +97,7 @@ Being precise about what is shipped versus planned:
 
 | | Status | Details |
 |---|---|---|
-| **AI-generated illustration pipeline** | ✅ Shipped | The whole watercolour icon and illustration set (~50 assets) was generated with **Google Gemini on Vertex AI**, then post-processed automatically (background removal, edge defringing, saturation boost, **auto-generated dark-mode variants**). The pipeline is reproducible from this repo (`design/tool/`). |
+| **AI-generated illustration pipeline** | ✅ Shipped | The whole watercolour icon and illustration set (~50 assets) was generated with a **custom Multimodal Generative AI Art Pipeline**, then post-processed automatically (background removal, edge defringing, saturation boost, **auto-generated dark-mode variants**). The pipeline is reproducible from this repo (`design/tool/`). |
 | **Smart insights (rule-based)** | ✅ Shipped | Intake adequacy by age/weight, next-nap prediction from the EASY engine, week-over-week trend callouts, auto-written weekly recap card. Transparent logic with cited references — no black box. |
 | **Voice-to-log ("Hey Siri, log 120 ml")** | 🛠 Designed | Mothers define their own spoken phrases ("bottle + number", "pump left + number", with relative times). A Vietnamese phrase parser fills the log automatically; works hands-free via iOS Shortcuts / Google Assistant routines. |
 | **Gin — grounded AI assistant** | 🗓 Planned (RQ4) | Retrieval-augmented answers **grounded in the app's cited, clinician-reviewed content**, personalised with the baby's own logs, with safety guardrails, red-flag escalation and no diagnosis. |
@@ -215,7 +215,7 @@ GinBaby is an **informational tool, not a medical device**. It never diagnoses. 
 | Offline | Custom **service worker** with hash-based incremental caching, first-run progress UI, install-as-app manifest |
 | UI | Custom design system (watercolour art, light/dark palettes, optional frosted glass), iOS-style navigation and haptics |
 | Quality | `flutter analyze` clean, **97 automated tests** including overflow smoke tests of every screen at 320 px / 125 % text with the real font |
-| Art pipeline | Gemini (Vertex AI) generation → automatic cutout, defringe, dark-mode derivation (`design/tool/`) |
+| Art pipeline | Multimodal Generative AI pipeline → automatic cutout, defringe, dark-mode derivation (`design/tool/`) |
 
 ```
 app/
