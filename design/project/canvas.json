@@ -1,0 +1,211 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Bottle.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Bú bình (mực sữa động)",
+      "w": 390,
+      "x": 4470,
+      "y": 0
+    },
+    "Overview.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Tổng quan ngày, tuần, tháng",
+      "w": 390,
+      "x": 4940,
+      "y": 0
+    },
+    "Recap.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Tổng kết tuần",
+      "w": 390,
+      "x": 5410,
+      "y": 0
+    },
+    "Community.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Cộng đồng: nhóm và kênh",
+      "w": 390,
+      "x": 5880,
+      "y": 0
+    },
+    "Chat.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Phòng chat nhóm",
+      "w": 390,
+      "x": 6350,
+      "y": 0
+    },
+    "Directions.dc.html": {
+      "h": 844,
+      "title": "3 hướng màu",
+      "w": 1100,
+      "x": 0,
+      "y": 0
+    },
+    "Directions2.dc.html": {
+      "h": 844,
+      "title": "3 hướng mới: Đêm, Mây, Sticker",
+      "w": 1100,
+      "x": 0,
+      "y": 964
+    },
+    "Directions3.dc.html": {
+      "h": 844,
+      "title": "3 hướng nữa: iOS chuẩn, Kính mờ, Sổ tay",
+      "w": 1100,
+      "x": 0,
+      "y": 1928
+    },
+    "Directions4.dc.html": {
+      "h": 844,
+      "title": "3 hướng mềm, sang: Bình minh, Ngọc trai, Kẹo mềm",
+      "w": 1100,
+      "x": 0,
+      "y": 2892
+    },
+    "Directions5.dc.html": {
+      "h": 844,
+      "title": "Bố cục và cảm xúc: Bento, Ảnh bé, Mascot Gin",
+      "w": 1100,
+      "x": 0,
+      "y": 3856
+    },
+    "Directions6.dc.html": {
+      "h": 844,
+      "title": "3 hướng hiện đại: Chữ lớn, Vòng hoạt động, Màn theo trạng thái",
+      "w": 1100,
+      "x": 0,
+      "y": 4820
+    },
+    "Money.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Thu chi của bé (kính mờ)",
+      "w": 390,
+      "x": 6820,
+      "y": 0
+    },
+    "MoneyAdd.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Thêm khoản thu chi (kính mờ)",
+      "w": 390,
+      "x": 7290,
+      "y": 0
+    },
+    "Fund.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Quỹ của con (kính mờ)",
+      "w": 390,
+      "x": 7760,
+      "y": 0
+    },
+    "Family.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Gia đình cùng ghi",
+      "w": 390,
+      "x": 4000,
+      "y": 0
+    },
+    "Guide.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Cho mẹ: cẩm nang & Gin AI",
+      "w": 390,
+      "x": 3060,
+      "y": 0
+    },
+    "Main.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Hôm nay",
+      "w": 390,
+      "x": 1180,
+      "y": 0
+    },
+    "Milk.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Sữa & tủ sữa",
+      "w": 390,
+      "x": 2120,
+      "y": 0
+    },
+    "Poop.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Ghi phân & tã",
+      "w": 390,
+      "x": 1650,
+      "y": 0
+    },
+    "Rhythm.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Nhịp EASY",
+      "w": 390,
+      "x": 2590,
+      "y": 0
+    },
+    "Share.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Thẻ chia sẻ",
+      "w": 390,
+      "x": 3530,
+      "y": 0
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-06T09:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "t1": {
+      "kind": "title1",
+      "maxW": 8150,
+      "text": "GinBaby · UI concept v0.1 (iOS)",
+      "w": 240,
+      "x": 0,
+      "y": -260
+    }
+  },
+  "order": [
+    "Directions.dc.html",
+    "Directions2.dc.html",
+    "Directions3.dc.html",
+    "Directions4.dc.html",
+    "Directions5.dc.html",
+    "Directions6.dc.html",
+    "Main.dc.html",
+    "Poop.dc.html",
+    "Milk.dc.html",
+    "Rhythm.dc.html",
+    "Guide.dc.html",
+    "Share.dc.html",
+    "Family.dc.html",
+    "Bottle.dc.html",
+    "Overview.dc.html",
+    "Recap.dc.html",
+    "Community.dc.html",
+    "Chat.dc.html",
+    "Money.dc.html",
+    "MoneyAdd.dc.html",
+    "Fund.dc.html"
+  ],
+  "pages": [],
+  "title": "GinBaby – UI Concept iOS"
+}

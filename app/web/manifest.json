@@ -1,0 +1,42 @@
+{
+  "name": "GinBaby",
+  "short_name": "GinBaby",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#FBEEE8",
+  "theme_color": "#FBEEE8",
+  "description": "Sổ tay nuôi con cho mẹ bỉm: bú, hút sữa, ngủ, tã, tiêm chủng, mốc phát triển và chi tiêu cho bé.",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/Icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/Icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "lang": "vi",
+  "scope": ".",
+  "categories": [
+    "health",
+    "lifestyle",
+    "parenting"
+  ]
+}

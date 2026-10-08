@@ -1,0 +1,19 @@
+# Build and tool output
+app/build/
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.packages
+app/.pub-cache/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+*.log
+
+# Large or private working files (kept locally, not published)
+design/icons/raw/
+design/icons/old/
+design/ref/
+PRODUCT_DIRECTION.md
+docs/ROADMAP.md

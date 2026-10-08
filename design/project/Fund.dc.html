@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>GinBaby – Quỹ của con</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{text-decoration:none;color:inherit}
+button{font-family:inherit}
+.gl{background:rgba(255,255,255,.5);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border:1px solid rgba(255,255,255,.78);box-shadow:0 8px 24px rgba(90,60,40,.12),inset 0 1px 0 rgba(255,255,255,.9)}
+.wv{animation:wv 2.4s linear infinite}
+@keyframes wv{from{transform:translateX(0)}to{transform:translateX(-30px)}}
+@media (prefers-reduced-motion: reduce){.wv{animation:none}}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:844px;overflow:hidden;background:#FBEFE4;color:#3B2F28;font-family:'Be Vietnam Pro',system-ui,sans-serif;box-sizing:border-box;padding:58px 20px 0">
+
+<div style="position:absolute;left:-60px;top:-50px;width:240px;height:240px;border-radius:120px;background:#F6B27E;filter:blur(44px);opacity:.85"></div>
+<div style="position:absolute;right:-70px;top:280px;width:240px;height:240px;border-radius:120px;background:#B9C3F2;filter:blur(48px);opacity:.85"></div>
+<div style="position:absolute;left:-40px;bottom:60px;width:220px;height:220px;border-radius:110px;background:#F8C9D0;filter:blur(44px);opacity:.85"></div>
+
+<div style="position:relative">
+
+<div style="display:flex;align-items:center;gap:10px">
+<a href="Guide.dc.html" aria-label="Quay lại" class="gl" style="width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+<div style="flex:1;font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:26px;line-height:1.1">Tiền của bé</div>
+<button aria-label="Thêm vào quỹ" style="width:44px;height:44px;border:0;border-radius:22px;background:rgba(242,158,98,.95);color:#3B2F28;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 6px 14px rgba(200,110,50,.3);cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+
+<div class="gl" style="margin-top:10px;height:46px;border-radius:23px;padding:4px;box-sizing:border-box;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px">
+<a href="Money.dc.html" style="border-radius:19px;color:#5A4A3E;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center">Thu chi</a>
+<a href="Fund.dc.html" style="border-radius:19px;background:#3B2F28;color:#FBF5EC;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">Quỹ của con</a>
+</div>
+
+<div class="gl" style="margin-top:10px;border-radius:26px;padding:14px 16px;display:flex;gap:10px;align-items:center">
+<div style="flex:1;min-width:0">
+<div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:#5A4A3E;font-weight:600">Tổng quỹ của Suri
+<button onClick="{{ toggleHide }}" aria-label="{{eyeLabel}}" style="width:44px;height:44px;margin:-10px 0;border:0;background:transparent;color:#3B2F28;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/><path d="{{slashPath}}"/></svg></button></div>
+<div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:34px;line-height:1.1;font-variant-numeric:tabular-nums">{{totalText}}</div>
+<div style="margin-top:4px;font-size:12px;color:#5A4A3E">Cập nhật 7/10 · vàng tính theo giá nhập tay</div>
+<div style="margin-top:8px;font-size:12px;font-weight:700">Mục tiêu học phí lớp 1: <span style="color:#B4561F">{{goalPct}}</span></div>
+<div style="margin-top:4px;height:6px;border-radius:3px;background:rgba(255,255,255,.7)"><div style="width:{{goalPctNum}}%;height:6px;border-radius:3px;background:#F2B632"></div></div>
+</div>
+<svg width="84" height="118" viewBox="0 0 84 118" role="img" aria-label="Hũ tiết kiệm đầy khoảng 40%" style="flex:none">
+<defs><clipPath id="jarClip"><rect x="10" y="22" width="64" height="90" rx="18"/></clipPath></defs>
+<rect x="10" y="22" width="64" height="90" rx="18" fill="rgba(255,255,255,.7)"/>
+<g clip-path="url(#jarClip)">
+<rect x="0" y="66" width="90" height="60" fill="#F2B632"/>
+<g class="wv"><path d="M-30 66 q7.5 -6 15 0 t15 0 t15 0 t15 0 t15 0 t15 0 t15 0 t15 0 V78 H-30z" fill="#F2B632"/></g>
+<circle cx="30" cy="92" r="6" fill="#FFD66B" stroke="#B88400" stroke-width="1.4"/><circle cx="48" cy="98" r="6" fill="#FFD66B" stroke="#B88400" stroke-width="1.4"/><circle cx="58" cy="86" r="5" fill="#FFD66B" stroke="#B88400" stroke-width="1.4"/>
+</g>
+<rect x="10" y="22" width="64" height="90" rx="18" fill="none" stroke="#3B2F28" stroke-width="2.5"/>
+<rect x="18" y="8" width="48" height="16" rx="6" fill="#3B2F28"/>
+<path d="M32 15h20" stroke="#F29E62" stroke-width="3" stroke-linecap="round"/>
+</svg>
+</div>
+
+<div style="margin-top:10px;display:flex;height:12px;border-radius:6px;overflow:hidden;gap:3px">
+<div style="flex:6.5;background:#9DB36B"></div><div style="flex:20;background:#8E9AD8"></div><div style="flex:15;background:#F2B632"></div><div style="flex:7.1;background:#E58F96"></div>
+</div>
+
+<div style="margin:10px -20px 0;padding:0 20px;display:flex;gap:8px;overflow:hidden">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="5">
+<button onClick="{{ c.pick }}" style="flex:none;height:44px;padding:0 16px;border-radius:22px;border:1px solid rgba(255,255,255,.78);font-size:13.5px;cursor:pointer;background:{{c.bg}};color:{{c.color}};font-weight:{{c.weight}}">{{c.label}}</button>
+</sc-for>
+</div>
+
+<div style="margin-top:6px;font-size:12.5px;color:#5A4A3E;font-weight:600">{{filterLine}}</div>
+
+<div class="gl" style="margin-top:8px;border-radius:22px;overflow:hidden">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-top:1px solid rgba(120,90,70,.10)">
+<div style="width:46px;height:46px;border-radius:14px;flex:none;background:{{r.bg}};color:{{r.fg}};display:flex;align-items:center;justify-content:center;font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:18px">{{r.initial}}</div>
+<div style="flex:1;min-width:0">
+<div style="font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{r.name}}</div>
+<div style="margin-top:2px;font-size:11.5px;color:#5A4A3E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{r.detail}}</div>
+<div style="display:flex;gap:6px;margin-top:3px;font-size:11px;font-weight:700"><span style="padding:2px 8px;border-radius:9px;background:{{r.bg}};color:{{r.fg}}">{{r.typeLabel}}</span><span style="padding:2px 8px;border-radius:9px;background:rgba(255,255,255,.7)">{{r.holder}}</span></div>
+</div>
+<div style="font-size:14.5px;font-weight:800;font-variant-numeric:tabular-nums;flex:none">{{r.amountText}}</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="position:absolute;left:0;right:0;bottom:0;height:120px;background:linear-gradient(to bottom,rgba(251,239,228,0),#FBEFE4 70%)"></div>
+<div style="position:absolute;left:20px;right:20px;bottom:26px;display:flex;gap:10px">
+<button style="flex:1;height:56px;border:0;border-radius:28px;background:#3B2F28;color:#FBF5EC;font-size:16px;font-weight:700;cursor:pointer">Thêm vào quỹ</button>
+<button class="gl" style="width:112px;height:56px;border-radius:28px;color:#3B2F28;font-size:15px;font-weight:700;cursor:pointer">Rút ra</button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const s = this.state || {};
+const active = s.type || 'all';
+const hide = !!s.hide;
+const money = (n) => (hide ? '••••••' : n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + 'đ');
+
+const types = {
+cash: { label: 'Tiền mặt', bg: '#E4EBD2', fg: '#4F6330' },
+save: { label: 'Tiết kiệm', bg: '#E3E6F6', fg: '#3F4A8A' },
+gold: { label: 'Vàng', bg: '#F8E9A8', fg: '#6B5410' },
+other: { label: 'Khác', bg: '#F8DEDF', fg: '#9A3F49' }
+};
+const assets = [
+{ name: 'Lì xì và tiền mừng', detail: 'Đầy tháng, Tết · ghi chú: ngoại tặng', holder: 'Ba giữ', type: 'cash', amount: 6500000 },
+{ name: 'Sổ tiết kiệm 12 tháng', detail: '6%/năm · đáo hạn 12/2026', holder: 'Mẹ giữ sổ', type: 'save', amount: 20000000 },
+{ name: 'Vàng nhẫn 9999 · 2 chỉ', detail: 'Mua 7/2026 · 7.500.000đ/chỉ (giá nhập tay)', holder: 'Bà nội giữ', type: 'gold', amount: 15000000 },
+{ name: 'Chứng chỉ quỹ', detail: 'Góp 1.000.000đ mỗi tháng', holder: 'Ba giữ', type: 'other', amount: 7100000 }
+];
+const total = assets.reduce((t, a) => t + a.amount, 0);
+const goal = 120000000;
+const pct = Math.round((total / goal) * 100);
+
+const filtered = assets.filter((a) => active === 'all' || a.type === active);
+const sum = filtered.reduce((t, a) => t + a.amount, 0);
+
+const keys = ['all', 'cash', 'save', 'gold', 'other'];
+const chips = keys.map((k) => {
+const label = k === 'all' ? 'Tất cả' : types[k].label;
+const on = k === active;
+return {
+label: label,
+pick: () => this.setState({ type: k }),
+bg: on ? '#3B2F28' : 'rgba(255,255,255,.5)',
+color: on ? '#FBF5EC' : '#3B2F28',
+weight: on ? 700 : 600
+};
+});
+
+return {
+totalText: money(total),
+goalPct: pct + '%',
+goalPctNum: pct,
+eyeLabel: hide ? 'Hiện số tiền' : 'Ẩn số tiền',
+slashPath: hide ? 'M4 4l16 16' : 'M0 0',
+toggleHide: () => this.setState({ hide: !hide }),
+chips: chips,
+filterLine: active === 'all'
+? assets.length + ' khoản trong quỹ'
+: types[active].label + ' · ' + filtered.length + ' khoản · ' + (hide ? '••••••' : sum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + 'đ'),
+rows: filtered.map((a) => ({
+name: a.name,
+detail: a.detail,
+holder: a.holder,
+initial: types[a.type].label.charAt(0),
+typeLabel: types[a.type].label,
+bg: types[a.type].bg,
+fg: types[a.type].fg,
+amountText: money(a.amount)
+}))
+};
+}
+}
+</script>
+</body>
+</html>

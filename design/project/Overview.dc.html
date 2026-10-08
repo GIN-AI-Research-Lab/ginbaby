@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>GinBaby – Tổng quan</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{text-decoration:none;color:inherit}
+button{font-family:inherit}
+.gr{transition:height .6s cubic-bezier(.22,1,.36,1)}
+@media (prefers-reduced-motion: reduce){.gr{transition:none}}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:844px;overflow:hidden;background:#FBF5EC;color:#3B2F28;font-family:'Be Vietnam Pro',system-ui,sans-serif;box-sizing:border-box;padding:58px 20px 0">
+
+<div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:30px;line-height:1.1">Tổng quan</div>
+<div style="font-size:13px;color:#6F5F53;margin-top:2px">Suri · bé 5 tháng</div>
+
+<div style="margin-top:12px;height:46px;border-radius:23px;background:#F1E7D8;padding:4px;box-sizing:border-box;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px">
+<button onClick="{{ pickDay }}" style="border:0;border-radius:19px;font-size:14px;cursor:pointer;background:{{dayBg}};color:{{dayColor}};font-weight:{{dayWeight}}">Ngày</button>
+<button onClick="{{ pickWeek }}" style="border:0;border-radius:19px;font-size:14px;cursor:pointer;background:{{weekBg}};color:{{weekColor}};font-weight:{{weekWeight}}">Tuần</button>
+<button onClick="{{ pickMonth }}" style="border:0;border-radius:19px;font-size:14px;cursor:pointer;background:{{monthBg}};color:{{monthColor}};font-weight:{{monthWeight}}">Tháng</button>
+</div>
+
+<div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;height:44px">
+<button aria-label="Trước" style="width:44px;height:44px;border:0;background:transparent;color:#3B2F28;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+<div style="font-size:15px;font-weight:700">{{rangeLabel}}</div>
+<button aria-label="Sau" style="width:44px;height:44px;border:0;background:transparent;color:#3B2F28;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+</div>
+
+<sc-if value="{{isDay}}" hint-placeholder-val="{{ false }}">
+<div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+<div style="background:#E3E6F6;border-radius:24px;padding:14px;height:104px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between">
+<div style="font-size:13px;font-weight:600;color:#3F4A8A">Ngủ</div>
+<div><div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:32px;line-height:1">13h05</div><div style="font-size:12px;color:#3F4A8A;margin-top:2px">Nhiều hơn hôm trước 20p</div></div>
+</div>
+<div style="background:#FBE3CF;border-radius:24px;padding:14px;height:104px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between">
+<div style="font-size:13px;font-weight:600;color:#8A4A1E">Bú</div>
+<div><div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:32px;line-height:1">7 cữ</div><div style="font-size:12px;color:#8A4A1E;margin-top:2px">Tổng 840ml</div></div>
+</div>
+<div style="background:#E4EBD2;border-radius:24px;padding:14px;height:104px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between">
+<div style="font-size:13px;font-weight:600;color:#4F6330">Tã</div>
+<div><div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:32px;line-height:1">5 lần</div><div style="font-size:12px;color:#4F6330;margin-top:2px">3 ướt · 2 phân</div></div>
+</div>
+<div style="background:#F8DEDF;border-radius:24px;padding:14px;height:104px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between">
+<div style="font-size:13px;font-weight:600;color:#9A3F49">Hút sữa</div>
+<div><div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:32px;line-height:1">380ml</div><div style="font-size:12px;color:#9A3F49;margin-top:2px">3 cữ</div></div>
+</div>
+</div>
+<a href="Rhythm.dc.html" style="margin-top:12px;background:#FFFCF7;border:1px solid #EDE2D3;border-radius:22px;padding:14px 16px;display:flex;align-items:center;gap:12px;color:#3B2F28">
+<div style="flex:1"><div style="font-size:15px;font-weight:700">Nhịp EASY trong ngày</div><div style="font-size:12.5px;color:#6F5F53;margin-top:2px">Bé vào nếp E3 · 4 vòng đúng giờ</div></div>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+</a>
+</div>
+</sc-if>
+
+<sc-if value="{{isWeek}}" hint-placeholder-val="{{ true }}">
+<div>
+<div style="background:#3B2F28;border-radius:26px;padding:18px 20px;color:#FBF5EC">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<div style="font-size:13px;color:#E9DCCB">Tổng kết tuần</div>
+<div style="font-size:12px;font-weight:700;padding:5px 10px;border-radius:12px;background:#F29E62;color:#3B2F28">+25p so với tuần trước</div>
+</div>
+<div style="display:flex;align-items:baseline;gap:8px;margin-top:4px">
+<div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:50px;line-height:1.05;color:#F6B27E">12h50</div>
+<div style="font-size:14px;color:#E9DCCB">ngủ mỗi ngày</div>
+</div>
+<a href="Recap.dc.html" style="margin-top:10px;height:46px;border-radius:23px;background:#F29E62;color:#3B2F28;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center">Xem thẻ tổng kết tuần</a>
+</div>
+
+<div style="margin-top:12px;background:#FFFCF7;border:1px solid #EDE2D3;border-radius:24px;padding:14px 16px">
+<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:15px;font-weight:700">Ngủ mỗi ngày</div><div style="font-size:12px;color:#6F5F53;font-weight:600">giờ</div></div>
+<div style="margin-top:8px;height:92px;display:flex;align-items:flex-end;gap:10px">
+<sc-for list="{{sleepBars}}" as="b" hint-placeholder-count="7">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:92px">
+<div style="font-size:11px;color:#6F5F53;font-variant-numeric:tabular-nums">{{b.v}}</div>
+<div class="gr" style="width:100%;border-radius:8px 8px 4px 4px;height:{{b.h}};background:{{b.bg}}"></div>
+</div>
+</sc-for>
+</div>
+<div style="margin-top:6px;display:flex;gap:10px;font-size:11.5px;color:#6F5F53;text-align:center">
+<span style="flex:1">T2</span><span style="flex:1">T3</span><span style="flex:1">T4</span><span style="flex:1">T5</span><span style="flex:1">T6</span><span style="flex:1">T7</span><span style="flex:1">CN</span>
+</div>
+</div>
+
+<div style="margin-top:12px;background:#FFFCF7;border:1px solid #EDE2D3;border-radius:24px;padding:14px 16px">
+<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:15px;font-weight:700">Sữa mỗi ngày</div>
+<div style="display:flex;gap:10px;font-size:11.5px;color:#6F5F53;font-weight:600">
+<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:4px;background:#F29E62"></span>Bú mẹ</span>
+<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:4px;background:#F8CBA4"></span>Hút</span>
+<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:4px;background:#8E9AD8"></span>CT</span>
+</div></div>
+<div style="margin-top:8px;height:96px;display:flex;align-items:flex-end;gap:10px">
+<sc-for list="{{milkBars}}" as="m" hint-placeholder-count="7">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;height:96px">
+<div class="gr" style="height:{{m.c}};background:#8E9AD8;border-radius:6px 6px 2px 2px"></div>
+<div class="gr" style="height:{{m.b}};background:#F8CBA4;border-radius:2px"></div>
+<div class="gr" style="height:{{m.a}};background:#F29E62;border-radius:2px 2px 6px 6px"></div>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isMonth}}" hint-placeholder-val="{{ false }}">
+<div>
+<div style="background:#FFFCF7;border:1px solid #EDE2D3;border-radius:24px;padding:14px">
+<div style="display:flex;gap:6px;font-size:11.5px;color:#6F5F53;font-weight:600;text-align:center">
+<span style="flex:1">T2</span><span style="flex:1">T3</span><span style="flex:1">T4</span><span style="flex:1">T5</span><span style="flex:1">T6</span><span style="flex:1">T7</span><span style="flex:1">CN</span>
+</div>
+<div style="margin-top:6px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px">
+<sc-for list="{{cells}}" as="d" hint-placeholder-count="35">
+<div style="height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;background:{{d.bg}};color:{{d.color}}">{{d.n}}</div>
+</sc-for>
+</div>
+<div style="margin-top:10px;display:flex;gap:16px;font-size:12px;color:#6F5F53;font-weight:600">
+<span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:5px;background:#DDE8C4"></span>Ngủ ngon, vui</span>
+<span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:5px;background:#E58F96"></span>Quấy, khó chịu</span>
+</div>
+</div>
+<div style="margin-top:12px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+<div style="background:#E3E6F6;border-radius:20px;padding:12px;box-sizing:border-box"><div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:22px;line-height:1.1">12h40</div><div style="font-size:11.5px;color:#3F4A8A;margin-top:2px">ngủ mỗi ngày</div></div>
+<div style="background:#FBE3CF;border-radius:20px;padding:12px;box-sizing:border-box"><div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:22px;line-height:1.1">860ml</div><div style="font-size:11.5px;color:#8A4A1E;margin-top:2px">sữa mỗi ngày</div></div>
+<div style="background:#F8DEDF;border-radius:20px;padding:12px;box-sizing:border-box"><div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:22px;line-height:1.1">4 ngày</div><div style="font-size:11.5px;color:#9A3F49;margin-top:2px">bé quấy</div></div>
+</div>
+</div>
+</sc-if>
+
+<div style="position:absolute;left:0;right:0;bottom:0;height:130px;background:linear-gradient(to bottom,rgba(251,245,236,0),#FBF5EC 70%)"></div>
+
+<nav aria-label="Điều hướng chính" style="position:absolute;left:16px;right:16px;bottom:22px;height:68px;border-radius:34px;background:#3B2F28;display:flex;align-items:center;justify-content:space-between;padding:8px;box-sizing:border-box;box-shadow:0 10px 30px rgba(59,47,40,.28)">
+<a href="Main.dc.html" aria-label="Hôm nay" style="width:56px;height:52px;display:flex;align-items:center;justify-content:center;color:#E9DCCB"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-8z"/></svg></a>
+<a href="Milk.dc.html" aria-label="Sữa" style="width:56px;height:52px;display:flex;align-items:center;justify-content:center;color:#E9DCCB"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6v3l1.5 2.5V20a1.5 1.5 0 0 1-1.5 1.5H9A1.5 1.5 0 0 1 7.5 20V8.5L9 6V3z"/><path d="M7.5 12h9"/></svg></a>
+<a href="Overview.dc.html" style="height:52px;padding:0 16px;border-radius:26px;background:#F29E62;color:#3B2F28;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Tổng quan</a>
+<a href="Guide.dc.html" aria-label="Cho mẹ" style="width:56px;height:52px;display:flex;align-items:center;justify-content:center;color:#E9DCCB"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4z"/><path d="M8 17h10"/></svg></a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const s = this.state || {};
+const p = s.period || 'week';
+const sel = (k) => p === k;
+const labels = { day: 'Hôm qua · 6 thg 10', week: '28/9 – 4/10', month: 'Tháng 9, 2026' };
+
+const sleep = [12.5, 13, 12, 13.5, 13, 12.5, 13.5];
+const sleepBars = sleep.map((v, i) => ({
+v: String(v).replace('.', ',') ,
+h: Math.round(v * 5) + 'px',
+bg: i === 3 ? '#8E9AD8' : '#C9CFEE'
+}));
+
+const milk = [
+{ a: 140, b: 380, c: 120 }, { a: 160, b: 350, c: 100 }, { a: 120, b: 400, c: 140 },
+{ a: 150, b: 380, c: 110 }, { a: 170, b: 340, c: 130 }, { a: 140, b: 390, c: 120 }, { a: 130, b: 420, c: 90 }
+];
+const k = 0.1;
+const milkBars = milk.map((m) => ({
+a: Math.round(m.a * k) + 'px', b: Math.round(m.b * k) + 'px', c: Math.round(m.c * k) + 'px'
+}));
+
+const fussy = [9, 10, 11, 21, 22];
+const cells = [];
+for (let i = 0; i < 35; i++) {
+const day = i - 0;
+if (day < 1 || day > 30) {
+cells.push({ n: '', bg: 'transparent', color: '#3B2F28' });
+} else if (fussy.indexOf(day) >= 0) {
+cells.push({ n: String(day), bg: '#E58F96', color: '#3B1218' });
+} else {
+cells.push({ n: String(day), bg: '#DDE8C4', color: '#3F5223' });
+}
+}
+
+const act = (on) => (on ? '#3B2F28' : 'transparent');
+const actC = (on) => (on ? '#FBF5EC' : '#6F5F53');
+const actW = (on) => (on ? 700 : 600);
+return {
+isDay: sel('day'), isWeek: sel('week'), isMonth: sel('month'),
+rangeLabel: labels[p],
+dayBg: act(sel('day')), dayColor: actC(sel('day')), dayWeight: actW(sel('day')),
+weekBg: act(sel('week')), weekColor: actC(sel('week')), weekWeight: actW(sel('week')),
+monthBg: act(sel('month')), monthColor: actC(sel('month')), monthWeight: actW(sel('month')),
+pickDay: () => this.setState({ period: 'day' }),
+pickWeek: () => this.setState({ period: 'week' }),
+pickMonth: () => this.setState({ period: 'month' }),
+sleepBars: sleepBars,
+milkBars: milkBars,
+cells: cells
+};
+}
+}
+</script>
+</body>
+</html>

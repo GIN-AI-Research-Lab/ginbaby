@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <!--
+    The path provided below has to start and end with a slash "/" in order for it to work correctly.
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="GinBaby: sổ tay nuôi con cho mẹ bỉm. Ghi bú, hút sữa, ngủ, tã, tiêm chủng, mốc phát triển và chi tiêu cho bé.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#FBEEE8">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="GinBaby">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>GinBaby</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    html, body { margin: 0; height: 100%; background: #FBEEE8; }
+    @media (prefers-color-scheme: dark) { html, body { background: #3A3262; } }
+    /* Màn chào: hiện ngay khi mở app, có thanh tiến độ khi đang lưu app để dùng ngoại tuyến, tự biến mất khi app đã sẵn sàng */
+    #gb-splash { position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px;
+      background: linear-gradient(180deg, #FAE6E1, #FBEEE8); color: #2B2634; font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; transition: opacity .35s ease; }
+    @media (prefers-color-scheme: dark) { #gb-splash { background: linear-gradient(180deg, #4A4180, #3A3262); color: #FBF8FF; } }
+    #gb-splash.gb-hide { opacity: 0; pointer-events: none; }
+    #gb-splash img { width: 104px; height: 104px; border-radius: 24px; box-shadow: 0 10px 28px rgba(139, 74, 71, .25); }
+    #gb-splash h1 { margin: 4px 0 0; font-size: 26px; letter-spacing: -.4px; color: #8B2F33; }
+    @media (prefers-color-scheme: dark) { #gb-splash h1 { color: #F0E4FF; } }
+    #gb-progress { display: none; width: min(300px, 78vw); }
+    #gb-progress.on { display: block; }
+    #gb-bar { height: 10px; border-radius: 6px; background: rgba(139, 74, 71, .18); overflow: hidden; }
+    @media (prefers-color-scheme: dark) { #gb-bar { background: rgba(255, 255, 255, .22); } }
+    #gb-fill { height: 100%; width: 0; border-radius: 6px; background: #E5666F; transition: width .25s ease; }
+    @media (prefers-color-scheme: dark) { #gb-fill { background: #B9A3F5; } }
+    #gb-note { margin-top: 10px; font-size: 13px; opacity: .8; }
+    #gb-pct { margin-top: 4px; font-weight: 700; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div id="gb-splash" role="status" aria-live="polite">
+    <img src="icons/Icon-192.png" alt="GinBaby">
+    <h1>GinBaby</h1>
+    <div id="gb-progress">
+      <div id="gb-bar"><div id="gb-fill"></div></div>
+      <div id="gb-pct">0%</div>
+      <div id="gb-note">Lần đầu mở app: đang lưu để dùng được cả khi không có mạng. Vui lòng giữ màn hình mở.</div>
+    </div>
+  </div>
+
+  <script>
+    // Hiệu năng: màn 3x (iPhone) vẽ ở 2x để GPU nhẹ hơn khoảng một nửa, chữ vẫn nét. Phải chạy trước khi Flutter khởi động.
+    (function () {
+      var d = window.devicePixelRatio || 1;
+      if (d > 2) {
+        try { Object.defineProperty(window, 'devicePixelRatio', { get: function () { return 2; }, configurable: true }); } catch (e) {}
+      }
+    })();
+  </script>
+  <script src="offline_bridge.js"></script>
+  <script>
+    // Khởi động: lần đầu (hoặc khi bộ nhớ ngoại tuyến bị xoá) tải hết phần cần để chạy ngoại tuyến rồi mới mở app, có thanh tiến độ.
+    // Các lần sau mở app ngay, việc cập nhật chạy ngầm và chỉ tải những tệp đã đổi.
+    (function () {
+      var splash = document.getElementById('gb-splash');
+      var progress = document.getElementById('gb-progress');
+      var fill = document.getElementById('gb-fill');
+      var pct = document.getElementById('gb-pct');
+      var note = document.getElementById('gb-note');
+      var started = false, firstFrame = false, ready = false, gate = false, watchdog = 0;
+      var KEY = 'gb-offline-ok';
+
+      function startFlutter() {
+        if (started) return;
+        started = true;
+        var s = document.createElement('script');
+        s.src = 'flutter_bootstrap.js';
+        s.async = true;
+        document.body.appendChild(s);
+      }
+      function maybeHide() {
+        if (firstFrame && (ready || !gate)) {
+          splash.classList.add('gb-hide');
+          setTimeout(function () { if (splash.parentNode) splash.parentNode.removeChild(splash); }, 450);
+        }
+      }
+      window.addEventListener('flutter-first-frame', function () { firstFrame = true; maybeHide(); });
+      // Phòng khi sự kiện không đến: gỡ màn chào sau tối đa 25 giây kể từ lúc app khởi động
+      function failsafe() { setTimeout(function () { ready = true; firstFrame = true; maybeHide(); }, 25000); }
+
+      function showProgress(done, total) {
+        gate = true;
+        progress.className = 'on';
+        var p = total > 0 ? Math.min(100, Math.round(done * 100 / total)) : 0;
+        fill.style.width = p + '%';
+        pct.textContent = p + '%  ·  ' + (done / 1048576).toFixed(1).replace('.', ',') + ' / ' + (total / 1048576).toFixed(1).replace('.', ',') + ' MB';
+      }
+      function arm(ms) {
+        clearTimeout(watchdog);
+        watchdog = setTimeout(function () { ready = true; startFlutter(); failsafe(); maybeHide(); }, ms);
+      }
+
+      if (!('serviceWorker' in navigator)) { startFlutter(); failsafe(); return; }
+
+      var fast = false;
+      try { fast = localStorage.getItem(KEY) === '1' && !!navigator.serviceWorker.controller; } catch (e) {}
+
+      navigator.serviceWorker.addEventListener('message', function (e) {
+        var d = e.data || {};
+        if (d.type === 'progress' && !fast) { showProgress(d.done, d.total); arm(12000); }
+        if (d.type === 'synced') {
+          try { if (d.ok) localStorage.setItem(KEY, '1'); } catch (x) {}
+          ready = true;
+          if (!fast) { fill.style.width = '100%'; pct.textContent = '100%'; }
+          startFlutter(); failsafe(); maybeHide();
+        }
+      });
+
+      navigator.serviceWorker.register('sw.js').catch(function () { startFlutter(); failsafe(); });
+      function syncAll() {
+        navigator.serviceWorker.ready.then(function (reg) {
+          if (reg.active) reg.active.postMessage({ type: 'sync-all' });
+        }).catch(function () {});
+      }
+      // Khi một bản mới của bộ lưu ngoại tuyến tiếp quản thì nhờ nó đồng bộ ngay (lần đầu lên bản có thanh tiến độ)
+      navigator.serviceWorker.addEventListener('controllerchange', function () { if (!fast) syncAll(); });
+      // Đã lưu đủ thì để app lên hình trước rồi mới đồng bộ ngầm, tránh tranh giành bộ nhớ đệm lúc khởi động
+      if (fast) window.addEventListener('flutter-first-frame', function () { setTimeout(syncAll, 3000); });
+      else syncAll();
+
+      if (fast) {
+        // Đã lưu đủ: mở app ngay, đồng bộ ngầm
+        startFlutter(); failsafe();
+      } else {
+        // Chưa lưu đủ: giữ màn chào cho tới khi tải xong. Nếu không có mạng hoặc không thấy tiến triển thì vẫn mở app.
+        gate = true;
+        arm(navigator.onLine === false ? 3000 : 10000);
+      }
+    })();
+  </script>
+</body>
+</html>

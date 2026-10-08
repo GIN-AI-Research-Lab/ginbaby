@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>GinBaby – Thu chi của bé</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{text-decoration:none;color:inherit}
+button{font-family:inherit}
+.gl{background:rgba(255,255,255,.5);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border:1px solid rgba(255,255,255,.78);box-shadow:0 8px 24px rgba(90,60,40,.12),inset 0 1px 0 rgba(255,255,255,.9)}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:844px;overflow:hidden;background:#FBEFE4;color:#3B2F28;font-family:'Be Vietnam Pro',system-ui,sans-serif;box-sizing:border-box;padding:58px 20px 0">
+
+<div style="position:absolute;left:-60px;top:-50px;width:240px;height:240px;border-radius:120px;background:#F6B27E;filter:blur(44px);opacity:.85"></div>
+<div style="position:absolute;right:-70px;top:260px;width:240px;height:240px;border-radius:120px;background:#B9C3F2;filter:blur(48px);opacity:.85"></div>
+<div style="position:absolute;left:-40px;bottom:60px;width:220px;height:220px;border-radius:110px;background:#F8C9D0;filter:blur(44px);opacity:.85"></div>
+
+<div style="position:relative">
+
+<div style="display:flex;align-items:center;gap:10px">
+<a href="Guide.dc.html" aria-label="Quay lại" class="gl" style="width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+<div style="flex:1;font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:26px;line-height:1.1">Tiền của bé</div>
+<a href="MoneyAdd.dc.html" aria-label="Thêm khoản thu chi" style="width:44px;height:44px;border-radius:22px;background:rgba(242,158,98,.95);color:#3B2F28;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 6px 14px rgba(200,110,50,.3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
+</div>
+
+<div class="gl" style="margin-top:10px;height:46px;border-radius:23px;padding:4px;box-sizing:border-box;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px">
+<a href="Money.dc.html" style="border-radius:19px;background:#3B2F28;color:#FBF5EC;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">Thu chi</a>
+<a href="Fund.dc.html" style="border-radius:19px;color:#5A4A3E;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center">Quỹ của con</a>
+</div>
+
+<div class="gl" style="margin-top:10px;border-radius:26px;padding:16px">
+<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:12.5px;color:#5A4A3E;font-weight:600">Số dư · tháng 10</div><div style="font-size:12px;font-weight:700;color:#5A4A3E">Tuần · <span style="color:#3B2F28">Tháng</span> · Năm</div></div>
+<div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:40px;line-height:1.1;margin-top:2px;font-variant-numeric:tabular-nums">{{balanceText}}</div>
+<div style="margin-top:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+<div style="background:rgba(228,235,210,.85);border-radius:16px;padding:10px 12px"><div style="font-size:11.5px;color:#4F6330;font-weight:700">Tổng thu</div><div style="font-size:17px;font-weight:800;color:#2F3F18;font-variant-numeric:tabular-nums">{{incomeText}}</div></div>
+<div style="background:rgba(248,222,223,.9);border-radius:16px;padding:10px 12px"><div style="font-size:11.5px;color:#9A3F49;font-weight:700">Tổng chi</div><div style="font-size:17px;font-weight:800;color:#7A2E38;font-variant-numeric:tabular-nums">{{expenseText}}</div></div>
+</div>
+</div>
+
+<div style="margin:10px -20px 0;padding:0 20px;display:flex;gap:8px;overflow:hidden">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="6">
+<button onClick="{{ c.pick }}" style="flex:none;height:44px;padding:0 16px;border-radius:22px;border:1px solid rgba(255,255,255,.78);font-size:13.5px;cursor:pointer;background:{{c.bg}};color:{{c.color}};font-weight:{{c.weight}}">{{c.label}}</button>
+</sc-for>
+</div>
+
+<div style="margin-top:8px;font-size:12.5px;color:#5A4A3E;font-weight:600">{{filterLine}}</div>
+
+<div style="margin-top:8px;display:flex;flex-direction:column;gap:10px">
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="2">
+<div>
+<div style="font-size:12.5px;font-weight:700;color:#5A4A3E;margin:0 0 6px 4px">{{g.label}}</div>
+<div class="gl" style="border-radius:22px;overflow:hidden">
+<sc-for list="{{g.rows}}" as="r" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-top:1px solid rgba(120,90,70,.10)">
+<div style="position:relative;width:46px;height:46px;border-radius:14px;flex:none;background:{{r.tagBg}};color:{{r.tagFg}};display:flex;align-items:center;justify-content:center;font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:18px">{{r.initial}}
+<span style="position:absolute;right:-3px;bottom:-3px;width:18px;height:18px;border-radius:9px;background:#FFFFFF;border:1px solid #D9C8B8;display:{{r.badgeDisplay}};align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3B2F28" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-label="Có ảnh"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z"/><circle cx="12" cy="13" r="3"/></svg></span>
+</div>
+<div style="flex:1;min-width:0">
+<div style="font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{r.title}}</div>
+<div style="display:flex;align-items:center;gap:6px;margin-top:3px;font-size:11.5px;color:#5A4A3E">
+<span style="padding:2px 8px;border-radius:9px;background:{{r.tagBg}};color:{{r.tagFg}};font-weight:700">{{r.tagLabel}}</span>
+<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{r.sub}}</span>
+</div>
+</div>
+<div style="font-size:14.5px;font-weight:800;font-variant-numeric:tabular-nums;color:{{r.amountColor}};flex:none">{{r.amountText}}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="position:absolute;left:0;right:0;bottom:0;height:90px;background:linear-gradient(to bottom,rgba(251,239,228,0),#FBEFE4 80%)"></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const s = this.state || {};
+const active = s.tag || 'all';
+const fmt = (n) => {
+const a = Math.abs(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+return (n < 0 ? '−' : n > 0 ? '+' : '') + a + 'đ';
+};
+const plain = (n) => Math.abs(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + 'đ';
+
+const tags = {
+bim: { label: 'Bỉm/tã', bg: '#FBE3CF', fg: '#8A4A1E' },
+sua: { label: 'Sữa', bg: '#E3E6F6', fg: '#3F4A8A' },
+thuoc: { label: 'Thuốc', bg: '#F8DEDF', fg: '#9A3F49' },
+kham: { label: 'Khám bệnh', bg: '#E4EBD2', fg: '#4F6330' },
+mung: { label: 'Tiền mừng', bg: '#F8E9A8', fg: '#6B5410' },
+lixi: { label: 'Lì xì', bg: '#FFD9D2', fg: '#8A3A2E' }
+};
+const items = [
+{ id: 1, title: 'Tã dán Bobby size M', sub: 'BB-M54 · 14:20', tag: 'bim', amount: -285000, day: 'Hôm nay', photo: true },
+{ id: 2, title: 'Sữa công thức số 2, 800g', sub: 'AP2-800 · 09:10', tag: 'sua', amount: -640000, day: 'Hôm nay', photo: true },
+{ id: 3, title: 'Tiền mừng cô Hạnh', sub: '20:05', tag: 'mung', amount: 500000, day: 'Hôm qua', photo: false },
+{ id: 4, title: 'Siro hạ sốt', sub: 'Nhà thuốc · 11:30', tag: 'thuoc', amount: -85000, day: 'Hôm qua', photo: true },
+{ id: 5, title: 'Tã dán Bobby size M', sub: 'BB-M54 · 3/10', tag: 'bim', amount: -285000, day: 'Trước đó', photo: true },
+{ id: 6, title: 'Khám nhi định kỳ', sub: 'Phòng khám · 2/10', tag: 'kham', amount: -300000, day: 'Trước đó', photo: false },
+{ id: 7, title: 'Lì xì ông bà ngoại', sub: '1/10', tag: 'lixi', amount: 2000000, day: 'Trước đó', photo: false }
+];
+
+let income = 0, expense = 0;
+items.forEach((i) => { if (i.amount > 0) income += i.amount; else expense += -i.amount; });
+const balance = income - expense;
+
+const filtered = items.filter((i) => active === 'all' || i.tag === active);
+const sum = filtered.reduce((t, i) => t + i.amount, 0);
+
+const order = ['Hôm nay', 'Hôm qua', 'Trước đó'];
+const groups = order.map((label) => ({
+label: label,
+rows: filtered.filter((i) => i.day === label).map((i) => ({
+title: i.title,
+sub: i.sub,
+initial: tags[i.tag].label.charAt(0),
+tagLabel: tags[i.tag].label,
+tagBg: tags[i.tag].bg,
+tagFg: tags[i.tag].fg,
+badgeDisplay: i.photo ? 'flex' : 'none',
+amountText: fmt(i.amount),
+amountColor: i.amount > 0 ? '#3F5223' : '#3B2F28'
+}))
+})).filter((g) => g.rows.length > 0);
+
+const keys = ['all'].concat(Object.keys(tags));
+const chips = keys.map((k) => {
+const label = k === 'all' ? 'Tất cả' : tags[k].label;
+const count = items.filter((i) => k === 'all' || i.tag === k).length;
+const on = k === active;
+return {
+label: label + ' ' + count,
+pick: () => this.setState({ tag: k }),
+bg: on ? '#3B2F28' : 'rgba(255,255,255,.5)',
+color: on ? '#FBF5EC' : '#3B2F28',
+weight: on ? 700 : 600
+};
+});
+
+return {
+balanceText: fmt(balance),
+incomeText: plain(income),
+expenseText: plain(expense),
+chips: chips,
+groups: groups,
+filterLine: active === 'all'
+? 'Tất cả ' + items.length + ' khoản trong tháng 10'
+: tags[active].label + ' · ' + filtered.length + ' khoản · ' + fmt(sum)
+};
+}
+}
+</script>
+</body>
+</html>

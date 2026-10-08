@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>GinBaby – Thêm khoản thu chi</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{text-decoration:none;color:inherit}
+button{font-family:inherit}
+.gl{background:rgba(255,255,255,.5);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border:1px solid rgba(255,255,255,.78);box-shadow:0 8px 24px rgba(90,60,40,.12),inset 0 1px 0 rgba(255,255,255,.9)}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:844px;overflow:hidden;background:#FBEFE4;color:#3B2F28;font-family:'Be Vietnam Pro',system-ui,sans-serif;box-sizing:border-box;padding:58px 20px 0">
+
+<div style="position:absolute;left:-60px;top:-50px;width:240px;height:240px;border-radius:120px;background:#F6B27E;filter:blur(44px);opacity:.85"></div>
+<div style="position:absolute;right:-70px;top:300px;width:240px;height:240px;border-radius:120px;background:#B9C3F2;filter:blur(48px);opacity:.85"></div>
+<div style="position:absolute;left:-40px;bottom:80px;width:220px;height:220px;border-radius:110px;background:#F8C9D0;filter:blur(44px);opacity:.85"></div>
+
+<div style="position:relative">
+<div style="display:flex;align-items:center;gap:10px">
+<a href="Money.dc.html" aria-label="Quay lại" class="gl" style="width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+<div style="flex:1;font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:24px;line-height:1.1">{{title}}</div>
+</div>
+
+<div class="gl" style="margin-top:10px;height:46px;border-radius:23px;padding:4px;box-sizing:border-box;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px">
+<button onClick="{{ pickChi }}" style="border:0;border-radius:19px;font-size:14px;cursor:pointer;background:{{chiBg}};color:{{chiColor}};font-weight:{{chiWeight}}">Chi</button>
+<button onClick="{{ pickThu }}" style="border:0;border-radius:19px;font-size:14px;cursor:pointer;background:{{thuBg}};color:{{thuColor}};font-weight:{{thuWeight}}">Thu</button>
+</div>
+
+<div class="gl" style="margin-top:10px;border-radius:24px;padding:12px 16px">
+<div style="font-size:12px;color:#5A4A3E;font-weight:600">Số tiền</div>
+<div style="display:flex;align-items:baseline;gap:6px">
+<div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:40px;line-height:1.1;color:{{amountColor}};font-variant-numeric:tabular-nums">285.000</div>
+<div style="font-size:18px;font-weight:700;color:#5A4A3E">đ</div>
+</div>
+<div style="margin-top:6px;display:flex;gap:8px">
+<span style="height:32px;padding:0 12px;border-radius:16px;background:rgba(255,255,255,.7);font-size:12.5px;font-weight:700;display:flex;align-items:center">+50k</span>
+<span style="height:32px;padding:0 12px;border-radius:16px;background:rgba(255,255,255,.7);font-size:12.5px;font-weight:700;display:flex;align-items:center">+100k</span>
+<span style="height:32px;padding:0 12px;border-radius:16px;background:rgba(255,255,255,.7);font-size:12.5px;font-weight:700;display:flex;align-items:center">+500k</span>
+<span style="height:32px;padding:0 12px;border-radius:16px;background:rgba(255,255,255,.7);font-size:12.5px;font-weight:700;display:flex;align-items:center">+1tr</span>
+</div>
+</div>
+
+<div class="gl" style="margin-top:10px;border-radius:24px;padding:12px 14px">
+<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:13px;font-weight:700">Nhãn</div><div style="font-size:11.5px;color:#5A4A3E">chọn nhiều nhãn</div></div>
+<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{tagChips}}" as="c" hint-placeholder-count="7">
+<button onClick="{{ c.pick }}" style="height:40px;padding:0 14px;border-radius:20px;border:1px solid rgba(255,255,255,.8);font-size:13px;cursor:pointer;background:{{c.bg}};color:{{c.color}};font-weight:{{c.weight}}">{{c.label}}</button>
+</sc-for>
+<span style="height:40px;padding:0 14px;border-radius:20px;border:1.5px dashed #B79F88;font-size:13px;font-weight:700;display:flex;align-items:center;color:#5A4A3E">+ Nhãn mới</span>
+</div>
+</div>
+
+<div class="gl" style="margin-top:10px;border-radius:24px;padding:2px 14px">
+<div style="display:flex;align-items:center;gap:10px;height:44px"><span style="width:92px;font-size:12.5px;color:#5A4A3E;font-weight:600">Thời gian</span><span style="flex:1;font-size:14px;font-weight:600">Hôm nay · 14:20</span><span style="font-size:12px;font-weight:700;color:#B4561F">Sửa</span></div>
+<div style="display:flex;align-items:center;gap:10px;height:44px;border-top:1px solid rgba(120,90,70,.10)"><span style="width:92px;font-size:12.5px;color:#5A4A3E;font-weight:600">Tên món</span><span style="flex:1;font-size:14px;font-weight:600">Tã dán Bobby size M</span></div>
+<div style="display:flex;align-items:center;gap:10px;height:44px;border-top:1px solid rgba(120,90,70,.10)"><span style="width:92px;font-size:12.5px;color:#5A4A3E;font-weight:600">Mã hàng</span><span style="flex:1;font-size:14px;font-weight:600">BB-M54</span>
+<button aria-label="Quét mã vạch" style="width:36px;height:36px;border:0;border-radius:18px;background:rgba(255,255,255,.75);color:#3B2F28;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M4 7V5h2M18 5h2v2M20 17v2h-2M6 19H4v-2M8 9v6M11 9v6M14 9v6M17 9v6"/></svg></button></div>
+<div style="display:flex;align-items:center;gap:10px;height:44px;border-top:1px solid rgba(120,90,70,.10)"><span style="width:92px;font-size:12.5px;color:#5A4A3E;font-weight:600">SL × đơn giá</span><span style="flex:1;font-size:14px;font-weight:600">1 × 285.000đ</span></div>
+<div style="display:flex;align-items:center;gap:10px;height:44px;border-top:1px solid rgba(120,90,70,.10)"><span style="width:92px;font-size:12.5px;color:#5A4A3E;font-weight:600">Nơi mua</span><span style="flex:1;font-size:14px;font-weight:600;color:#5A4A3E">Tùy chọn</span></div>
+<div style="display:flex;align-items:center;gap:10px;height:44px;border-top:1px solid rgba(120,90,70,.10)"><span style="width:92px;font-size:12.5px;color:#5A4A3E;font-weight:600">Ghi chú</span><span style="flex:1;font-size:14px;font-weight:600;color:#5A4A3E">Tùy chọn</span></div>
+</div>
+
+<div class="gl" style="margin-top:10px;border-radius:24px;padding:10px 14px;display:flex;align-items:center;gap:10px">
+<span style="font-size:13px;font-weight:700;margin-right:2px">Ảnh</span>
+<span style="width:52px;height:52px;border-radius:14px;background:linear-gradient(160deg,#F7CDAE,#E9A98D);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#5A3A28">Hoá đơn</span>
+<span style="width:52px;height:52px;border-radius:14px;background:linear-gradient(160deg,#C9CFEE,#A9B4E6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#2F3A78">Sản phẩm</span>
+<button aria-label="Thêm ảnh" style="width:52px;height:52px;border-radius:14px;border:1.5px dashed #B79F88;background:transparent;color:#5A4A3E;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+</div>
+</div>
+
+<div style="position:absolute;left:20px;right:20px;bottom:26px">
+<button style="width:100%;height:56px;border:0;border-radius:28px;background:#3B2F28;color:#FBF5EC;font-size:17px;font-weight:700;cursor:pointer">Lưu khoản {{typeWord}}</button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const s = this.state || {};
+const type = s.type || 'chi';
+const isChi = type === 'chi';
+const chiTags = [['bim', 'Bỉm/tã'], ['sua', 'Sữa'], ['thuoc', 'Thuốc'], ['kham', 'Khám bệnh'], ['tiem', 'Tiêm chủng'], ['quanao', 'Quần áo'], ['dochoi', 'Đồ chơi']];
+const thuTags = [['mung', 'Tiền mừng'], ['lixi', 'Lì xì'], ['qua', 'Quà'], ['khac', 'Khác']];
+const list = isChi ? chiTags : thuTags;
+const sel = s.sel || { chi: ['bim'], thu: ['mung'] };
+const cur = sel[type] || [];
+const toggle = (k) => () => {
+const next = cur.indexOf(k) >= 0 ? cur.filter((x) => x !== k) : cur.concat([k]);
+const all = { chi: sel.chi, thu: sel.thu };
+all[type] = next;
+this.setState({ sel: all });
+};
+const tagChips = list.map((t) => {
+const on = cur.indexOf(t[0]) >= 0;
+return {
+label: (on ? '✓ ' : '') + t[1],
+pick: toggle(t[0]),
+bg: on ? '#3B2F28' : 'rgba(255,255,255,.65)',
+color: on ? '#FBF5EC' : '#3B2F28',
+weight: on ? 700 : 600
+};
+});
+return {
+title: isChi ? 'Thêm khoản chi' : 'Thêm khoản thu',
+typeWord: isChi ? 'chi' : 'thu',
+amountColor: isChi ? '#3B2F28' : '#3F5223',
+chiBg: isChi ? '#3B2F28' : 'transparent', chiColor: isChi ? '#FBF5EC' : '#5A4A3E', chiWeight: isChi ? 700 : 600,
+thuBg: isChi ? 'transparent' : '#3B2F28', thuColor: isChi ? '#5A4A3E' : '#FBF5EC', thuWeight: isChi ? 600 : 700,
+pickChi: () => this.setState({ type: 'chi' }),
+pickThu: () => this.setState({ type: 'thu' }),
+tagChips: tagChips
+};
+}
+}
+</script>
+</body>
+</html>

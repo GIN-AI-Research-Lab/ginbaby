@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>GinBaby – Chữ lớn, Vòng hoạt động, Màn theo trạng thái</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width:1100px;height:844px;box-sizing:border-box;padding:44px 38px;background:#FFFCF7;color:#3B2F28;font-family:'Be Vietnam Pro',system-ui,sans-serif;display:flex;flex-direction:column;gap:22px">
+
+<div style="display:flex;align-items:baseline;gap:16px">
+<div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:44px;line-height:1">GinBaby</div>
+<div style="font-size:16px;color:#6F5F53;font-weight:500">3 hướng hiện đại: Chữ lớn · Vòng hoạt động · Màn theo trạng thái</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px;flex:1">
+
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;gap:10px">
+<span style="width:36px;height:36px;border-radius:18px;background:#3B2F28;color:#FBF5EC;display:flex;align-items:center;justify-content:center;font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:18px">P</span>
+<div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:700;font-size:26px;line-height:1">Chữ lớn</div>
+</div>
+<div style="font-size:14px;color:#6F5F53;line-height:1.5">Phong cách Thụy Sĩ: chữ số khổng lồ, đường kẻ mảnh, một màu nhấn. Gọn, mạnh, đọc nhanh.</div>
+<div style="position:relative;flex:1;border-radius:28px;background:#F4F1EC;border:1px solid #D9D4CC;overflow:hidden;padding:18px;box-sizing:border-box;display:flex;flex-direction:column;color:#141210">
+<div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;padding-bottom:8px;border-bottom:1.5px solid #141210"><span>Suri · 5 th 12 ng</span><span>Hôm nay</span></div>
+<div style="margin-top:10px;font-size:12px;font-weight:600;color:#5C564E">Giờ ngủ kế tiếp trong</div>
+<div style="display:flex;align-items:flex-end;gap:8px;margin-top:-4px">
+<div style="font-size:112px;font-weight:800;letter-spacing:-6px;line-height:.95">25</div>
+<div style="font-size:20px;font-weight:700;padding-bottom:12px;color:#E5431F">phút</div>
+</div>
+<div style="margin-top:8px;display:flex;flex-direction:column">
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-top:1px solid #C9C3BA;font-size:14px"><span style="font-weight:600">Bú gần nhất</span><span style="font-weight:800;font-variant-numeric:tabular-nums">2h10 · 120ml</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-top:1px solid #C9C3BA;font-size:14px"><span style="font-weight:600">Đã ngủ</span><span style="font-weight:800;font-variant-numeric:tabular-nums">9h40</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-top:1px solid #C9C3BA;border-bottom:1px solid #C9C3BA;font-size:14px"><span style="font-weight:600">Tã hôm nay</span><span style="font-weight:800;font-variant-numeric:tabular-nums">5</span></div>
+</div>
+<div style="margin-top:14px;height:50px;background:#141210;color:#F4F1EC;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-radius:6px"><span>Bắt đầu ngủ</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+<div style="margin-top:auto;display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;padding-top:10px">
+<span style="border-bottom:2.5px solid #E5431F;padding-bottom:2px">Hôm nay</span><span style="color:#5C564E">Sữa</span><span style="color:#5C564E">Tổng quan</span><span style="color:#5C564E">Cho mẹ</span>
+</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;gap:10px">
+<span style="width:36px;height:36px;border-radius:18px;background:#3B2F28;color:#FBF5EC;display:flex;align-items:center;justify-content:center;font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:18px">Q</span>
+<div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:700;font-size:26px;line-height:1">Vòng hoạt động</div>
+</div>
+<div style="font-size:14px;color:#6F5F53;line-height:1.5">Nền tối, vòng tròn lồng nhau như Apple Fitness và Oura. Một cái nhìn là biết bé đã ngủ, bú, thay tã đủ chưa.</div>
+<div style="position:relative;flex:1;border-radius:28px;background:#0F0F12;border:1px solid #2A2A30;overflow:hidden;padding:18px;box-sizing:border-box;display:flex;flex-direction:column;color:#F3F0EA">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div><div style="font-size:13px;font-weight:700">Suri</div><div style="font-size:11.5px;color:#A8A29A">5 tháng 12 ngày</div></div>
+<span style="font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:12px;background:#1E1E24">Hôm nay</span>
+</div>
+<div style="position:relative;margin-top:10px;display:flex;justify-content:center">
+<svg width="190" height="190" viewBox="0 0 160 160" role="img" aria-label="Vòng ngủ 82%, bú 70%, tã 55%">
+<g fill="none" stroke-linecap="round" stroke-width="12" transform="rotate(-90 80 80)">
+<circle cx="80" cy="80" r="68" stroke="rgba(142,154,216,.2)"/>
+<circle cx="80" cy="80" r="68" stroke="#8E9AD8" stroke-dasharray="350 427.3"/>
+<circle cx="80" cy="80" r="52" stroke="rgba(242,158,98,.2)"/>
+<circle cx="80" cy="80" r="52" stroke="#F29E62" stroke-dasharray="229 326.7"/>
+<circle cx="80" cy="80" r="36" stroke="rgba(157,179,107,.2)"/>
+<circle cx="80" cy="80" r="36" stroke="#9DB36B" stroke-dasharray="124 226.2"/>
+</g>
+</svg>
+<div style="position:absolute;left:0;right:0;top:0;height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:34px;line-height:1">78</div><div style="font-size:10.5px;color:#A8A29A;font-weight:600">nếp hôm nay</div></div>
+</div>
+<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;font-size:13.5px">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:10px;height:10px;border-radius:5px;background:#8E9AD8"></span><span style="flex:1;font-weight:600">Ngủ</span><span style="font-weight:700;font-variant-numeric:tabular-nums">10h40 / 13h</span></div>
+<div style="display:flex;align-items:center;gap:10px"><span style="width:10px;height:10px;border-radius:5px;background:#F29E62"></span><span style="flex:1;font-weight:600">Bú</span><span style="font-weight:700;font-variant-numeric:tabular-nums">5 / 7 cữ</span></div>
+<div style="display:flex;align-items:center;gap:10px"><span style="width:10px;height:10px;border-radius:5px;background:#9DB36B"></span><span style="flex:1;font-weight:600">Tã</span><span style="font-weight:700;font-variant-numeric:tabular-nums">3 / 5 lần</span></div>
+</div>
+<div style="margin-top:auto;height:52px;border-radius:26px;background:#1E1E24;display:flex;align-items:center;padding:6px;box-sizing:border-box;gap:6px">
+<span style="height:40px;padding:0 16px;border-radius:20px;background:#F3F0EA;color:#0F0F12;font-size:13px;font-weight:700;display:flex;align-items:center">Hôm nay</span>
+<span style="flex:1"></span><span style="width:8px;height:8px;border-radius:4px;background:#A8A29A"></span><span style="width:8px;height:8px;border-radius:4px;background:#A8A29A"></span><span style="width:8px;height:8px;border-radius:4px;background:#A8A29A;margin-right:14px"></span>
+</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;gap:10px">
+<span style="width:36px;height:36px;border-radius:18px;background:#3B2F28;color:#FBF5EC;display:flex;align-items:center;justify-content:center;font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:18px">R</span>
+<div style="font-family:'Baloo 2',system-ui,sans-serif;font-weight:700;font-size:26px;line-height:1">Màn theo trạng thái</div>
+</div>
+<div style="font-size:14px;color:#6F5F53;line-height:1.5">Cả màn đổi màu theo bé đang làm gì: thức màu cam, ngủ màu chàm, bú màu hồng. Liếc qua là biết, không cần đọc.</div>
+<div style="display:flex;gap:8px">
+<span style="height:36px;padding:0 14px;border-radius:18px;background:#F29E62;color:#3B2F28;font-size:13px;font-weight:700;display:flex;align-items:center">Thức</span>
+<span style="height:36px;padding:0 14px;border-radius:18px;background:#2B2F6B;color:#FFFFFF;font-size:13px;font-weight:700;display:flex;align-items:center">Ngủ</span>
+<span style="height:36px;padding:0 14px;border-radius:18px;background:#F4A7B3;color:#3B2F28;font-size:13px;font-weight:700;display:flex;align-items:center">Bú</span>
+</div>
+<div style="position:relative;flex:1;border-radius:28px;background:#2B2F6B;overflow:hidden;padding:18px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;color:#FFFFFF">
+<div style="position:absolute;left:30px;top:50px;width:4px;height:4px;border-radius:2px;background:#FFFFFF;opacity:.8"></div>
+<div style="position:absolute;right:50px;top:80px;width:3px;height:3px;border-radius:2px;background:#FFFFFF;opacity:.7"></div>
+<div style="position:absolute;left:70px;top:130px;width:3px;height:3px;border-radius:2px;background:#FFFFFF;opacity:.6"></div>
+<div style="position:absolute;right:30px;top:170px;width:4px;height:4px;border-radius:2px;background:#FFFFFF;opacity:.8"></div>
+<div style="width:100%;display:flex;justify-content:space-between;align-items:center;position:relative">
+<div style="font-size:13px;font-weight:700">Suri đang ngủ</div>
+<span style="font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:12px;background:rgba(255,255,255,.16)">từ 09:58</span>
+</div>
+<svg width="110" height="110" viewBox="0 0 24 24" style="margin-top:16px;position:relative" role="img" aria-label="Mặt trăng"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="#F7E7A6"/></svg>
+<div style="position:relative;margin-top:8px;font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:58px;letter-spacing:-1px;line-height:1.05;font-variant-numeric:tabular-nums">1:12:40</div>
+<div style="position:relative;font-size:13px;color:#D4D8F5;font-weight:500">Dự kiến dậy lúc 11:30</div>
+<div style="position:relative;margin-top:16px;width:100%;height:48px;border-radius:24px;background:#FFFFFF;color:#2B2F6B;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center">Bé dậy rồi</div>
+<div style="position:relative;margin-top:auto;width:100%;height:50px;border-radius:25px;background:rgba(255,255,255,.14);display:flex;align-items:center;padding:5px;box-sizing:border-box;gap:6px">
+<span style="height:40px;padding:0 16px;border-radius:20px;background:#FFFFFF;color:#2B2F6B;font-size:13px;font-weight:700;display:flex;align-items:center">Hôm nay</span>
+<span style="flex:1"></span><span style="width:8px;height:8px;border-radius:4px;background:#D4D8F5"></span><span style="width:8px;height:8px;border-radius:4px;background:#D4D8F5"></span><span style="width:8px;height:8px;border-radius:4px;background:#D4D8F5;margin-right:14px"></span>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1100,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
