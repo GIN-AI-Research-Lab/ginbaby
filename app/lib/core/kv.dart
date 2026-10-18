@@ -1,4 +1,5 @@
 import 'package:sembast/sembast.dart';
+import 'package:sembast/sembast_memory.dart';
 
 import 'kv_open_io.dart' if (dart.library.js_interop) 'kv_open_web.dart';
 
@@ -9,6 +10,9 @@ class KV {
   static final _store = StoreRef<String, String>('kv');
 
   static Future<KV> open() async => KV._(await openDatabaseFile('ginbaby'));
+
+  /// Kho trong bộ nhớ, dùng khi kiểm thử.
+  static Future<KV> memory() async => KV._(await databaseFactoryMemory.openDatabase('mem${DateTime.now().microsecondsSinceEpoch}'));
 
   Future<String?> get(String key) => _store.record(key).get(_db);
 

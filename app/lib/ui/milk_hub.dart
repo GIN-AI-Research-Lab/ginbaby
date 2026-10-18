@@ -66,7 +66,7 @@ class _MilkHubState extends State<MilkHub> {
       Row(children: [
         Expanded(child: BigButton('Ghi bú', icon: Icons.local_drink_rounded, color: GB.accent, fg: GB.ink, height: 50, onTap: () => openPage(context, const FeedScreen()))),
         const SizedBox(width: 10),
-        Expanded(child: BigButton('Ghi hút', icon: Icons.favorite_rounded, color: GB.pump, fg: GB.ink, height: 50, onTap: () => openPage(context, const PumpScreen()))),
+        Expanded(child: BigButton('Ghi hút', icon: Icons.favorite_rounded, color: GB.pump, fg: GB.dark ? const Color(0xFF2A2433) : GB.ink, height: 50, onTap: () => openPage(context, const PumpScreen()))),
       ]),
       const SectionTitle('Hút sữa hôm nay'),
       GlassCard(
@@ -274,9 +274,9 @@ class _MilkHubState extends State<MilkHub> {
             BottleView(ml: ml, cap: 240, width: 110, color: GB.milkBottle, onChanged: (v) => setS(() => ml = v), label: 'Lượng sữa'),
           ]),
           Row(children: [
-            RoundIconButton(icon: Icons.remove_rounded, label: 'Giảm 10ml', onTap: () => setS(() => ml = math.max(10, ml - 10))),
+            RoundIconButton(icon: Icons.remove_rounded, label: 'Giảm 5ml', onTap: () => setS(() => ml = math.max(5, ml - 5))),
             const SizedBox(width: 10),
-            RoundIconButton(icon: Icons.add_rounded, label: 'Tăng 10ml', filled: true, onTap: () => setS(() => ml = math.min(240, ml + 10))),
+            RoundIconButton(icon: Icons.add_rounded, label: 'Tăng 5ml', filled: true, onTap: () => setS(() => ml = math.min(240, ml + 5))),
           ]),
           const SizedBox(height: 16),
           BigButton('Lưu bình', icon: Icons.check_rounded, onTap: () {

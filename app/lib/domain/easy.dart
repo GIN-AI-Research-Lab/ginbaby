@@ -18,6 +18,17 @@ class Easy {
     return const Range(180, 240);
   }
 
+  /// Thời gian thức theo nhịp đang chọn: nhịp dài hơn mức tự chọn theo tuổi thì thức lâu hơn (và ngược lại).
+  static Range wakeFor(Settings s, int ageDays) {
+    final base = wakeWindow(ageDays);
+    final r = cycleFor(s, ageDays) / autoCycle(ageDays);
+    double f(double v) => (v * r).clamp(30.0, 300.0);
+    return Range(f(base.lo), f(base.hi));
+  }
+
+  /// Số cữ ngủ ngày xếp vừa trong ngày (từ giờ dậy sáng tới tối ~19h30) theo độ dài một vòng EASY.
+  static int napsFor(int cycleMinutes, {int dayMinutes = 750}) => (dayMinutes / cycleMinutes).floor().clamp(1, 6);
+
   static Range napsPerDay(int ageDays) {
     if (ageDays < 90) return const Range(4, 5);
     if (ageDays < 180) return const Range(3, 4);
@@ -49,10 +60,11 @@ class Easy {
   static String label(int cycleMinutes) => 'E${cycleMinutes / 60}'.replaceAll('.0', '');
 
   /// Một vòng: ăn ~20–30p, chơi, ngủ phần còn lại.
-  static ({int eat, int activity, int sleep}) split(int cycleMinutes, int ageDays) {
+  static ({int eat, int activity, int sleep}) split(int cycleMinutes, int ageDays, {Range? wake}) {
     final eat = ageDays < 60 ? 30 : 25;
-    final wake = wakeWindow(ageDays).mid.round();
-    final activity = (wake - eat).clamp(15, 180);
+    final wake0 = (wake ?? wakeWindow(ageDays)).mid.round();
+    final wake0c = wake0;
+    final activity = (wake0c - eat).clamp(15, 180);
     final sleep = (cycleMinutes - eat - activity).clamp(20, 240);
     return (eat: eat, activity: activity, sleep: sleep);
   }

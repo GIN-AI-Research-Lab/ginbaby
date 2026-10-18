@@ -6,13 +6,15 @@ import 'theme.dart';
 
 /// Ô hoạt động pastel có tranh, nhãn và nút tròn dấu cộng (Trang chủ).
 class ActivityTile extends StatelessWidget {
-  const ActivityTile({super.key, required this.label, required this.art, required this.tile, required this.deep, required this.onTap, this.icon = Icons.add_rounded, this.onLong});
+  const ActivityTile({super.key, required this.label, required this.art, required this.tile, required this.deep, required this.onTap, this.icon = Icons.add_rounded, this.onLong, this.onQuick, this.quickLabel});
   final String label;
   final String art;
   final Color tile;
   final Color deep;
   final VoidCallback onTap;
   final VoidCallback? onLong;
+  final VoidCallback? onQuick; // chạm vòng tròn: ghi nhanh ngay, không mở màn
+  final String? quickLabel;
   final IconData icon;
 
   @override
@@ -40,16 +42,27 @@ class ActivityTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 2),
               child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, style: GB.body(13.5, w: FontWeight.w800))),
             ),
-            const SizedBox(height: 6),
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(color: deep, shape: BoxShape.circle),
-              child: Icon(icon, size: 18, color: Colors.white),
-            ),
+            const SizedBox(height: 0),
+            _circle(),
           ]),
         ),
       ),
+    );
+  }
+
+  Widget _circle() {
+    final dot = Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(color: deep, shape: BoxShape.circle),
+      child: Icon(icon, size: 19, color: Colors.white),
+    );
+    // Luôn chiếm 44 điểm cao để các ô cùng hàng thẳng nhau; chỉ bấm riêng được khi có onQuick.
+    if (onQuick == null) return minHit(dot);
+    return Semantics(
+      button: true,
+      label: quickLabel ?? label,
+      child: Pressable(scale: .85, onTap: onQuick, behavior: HitTestBehavior.opaque, child: minHit(dot)),
     );
   }
 }

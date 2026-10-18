@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../core/art_catalog.dart';
 import '../core/kit.dart';
+import '../core/pastel.dart';
 import '../core/pickers.dart';
 import '../core/theme.dart';
 import '../data/app_state.dart';
@@ -11,7 +12,7 @@ import '../data/models.dart';
 import 'money.dart';
 import 'quick_logs.dart';
 
-final _typeInfo = <AssetType, (String, Color, Color, IconData)>{
+Map<AssetType, (String, Color, Color, IconData)> get _typeInfo => {
   AssetType.cash: ('Tiền mặt', GB.p(Color(0xFFE4EBD2)), GB.f(Color(0xFF4F6330)), Icons.payments_rounded),
   AssetType.saving: ('Tiết kiệm', GB.p(Color(0xFFE3E6F6)), GB.f(Color(0xFF3F4A8A)), Icons.savings_rounded),
   AssetType.gold: ('Vàng', GB.p(Color(0xFFF8E9A8)), GB.f(Color(0xFF6B5410)), Icons.diamond_rounded),
@@ -23,7 +24,7 @@ final _filterState = ValueNotifier<AssetType?>(null);
 /// Nội dung tab "Quỹ của con".
 List<Widget> fundView(BuildContext context, VoidCallback refresh) {
   final total = app.fundTotal;
-  final goal = app.goal;
+  final goal = app.goal; // hũ minh hoạ tiến độ của mục tiêu đầu tiên
   final pct = goal.target > 0 ? (total / goal.target) : 0.0;
   final byType = <AssetType, int>{for (final t in AssetType.values) t: app.funds.where((f) => f.type == t).fold(0, (a, f) => a + f.value)};
   final active = _filterState.value;
@@ -42,25 +43,14 @@ List<Widget> fundView(BuildContext context, VoidCallback refresh) {
             FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(maskVnd(total), style: GB.display(34))),
             const SizedBox(height: 4),
             Text(latest == null ? 'Chưa có khoản nào' : 'Cập nhật ${GB.dmy(latest)} · vàng tính theo giá nhập tay', style: GB.body(11.5, color: GB.inkMuted)),
-            const SizedBox(height: 10),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => _goalDialog(context),
-              child: goal.target > 0
-                  ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('${goal.name.isEmpty ? 'Mục tiêu' : goal.name}: ${app.settings.hideMoney ? '••' : '${(pct * 100).round()}'}%', style: GB.body(12.5, w: FontWeight.w800)),
-                      const SizedBox(height: 4),
-                      ClipRRect(borderRadius: BorderRadius.circular(3), child: LinearProgressIndicator(value: pct.clamp(0.0, 1.0), minHeight: 6, backgroundColor: GB.w(.7), valueColor: AlwaysStoppedAnimation(GB.gold))),
-                      Text('Đích ${maskVnd(goal.target)}', style: GB.body(11.5, color: GB.inkMuted)),
-                    ])
-                  : Text('+ Đặt mục tiêu (học phí, du học…)', style: GB.body(12.5, w: FontWeight.w800, color: GB.accentDeep)),
-            ),
           ]),
         ),
         const SizedBox(width: 8),
         SizedBox(width: 84, height: 118, child: JarView(fill: pct.clamp(0.0, 1.0))),
       ]),
     ),
+    const SizedBox(height: 10),
+    _goalsCard(context, total),
     const SizedBox(height: 10),
     if (total > 0) ...[
       Row(children: [
@@ -153,26 +143,86 @@ String? _fundArt(AssetType t) {
 
 String _num(double v) => v == v.roundToDouble() ? v.round().toString() : v.toString().replaceAll('.', ',');
 
-Future<void> _goalDialog(BuildContext context) async {
-  final n = TextEditingController(text: app.goal.name);
-  final t = TextEditingController(text: app.goal.target > 0 ? app.goal.target.toString() : '');
-  final ok = await showDialog<bool>(
+/// Thẻ "Mục tiêu quỹ": nhiều mục tiêu (học phí, du học…), mỗi mục tiêu có thanh tiến độ so với tổng quỹ.
+Widget _goalsCard(BuildContext context, int total) {
+  final hide = app.settings.hideMoney;
+  Widget row(FundGoal g) {
+    final pct = g.target > 0 ? total / g.target : 0.0;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _goalDialog(context, edit: g),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Expanded(child: Text(g.name.isEmpty ? 'Mục tiêu' : g.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: GB.body(14.5, w: FontWeight.w800))),
+            Text(hide ? '••' : '${(pct * 100).round()}%', style: GB.body(14, w: FontWeight.w800, color: pct >= 1 ? GB.ok : GB.accentDeep)),
+          ]),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(value: pct.clamp(0.0, 1.0), minHeight: 8, backgroundColor: GB.line, valueColor: AlwaysStoppedAnimation(pct >= 1 ? GB.ok : GB.accent)),
+          ),
+          const SizedBox(height: 4),
+          Text(hide ? 'Đích ••' : 'Quỹ ${GB.vndShort(total)} · đích ${GB.vndShort(g.target)}', style: GB.body(12, color: GB.inkMuted)),
+        ]),
+      ),
+    );
+  }
+
+  return SectionCard(
+    title: 'Mục tiêu quỹ',
+    icon: Icons.flag_rounded,
+    iconColor: GB.accentDeep,
+    trailing: '+ Thêm mục tiêu',
+    onTrailing: () => _goalDialog(context),
+    child: app.goals.isEmpty
+        ? GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => _goalDialog(context),
+            child: Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Text('Chưa có mục tiêu. Bấm để đặt mục tiêu (học phí, du học…).', style: GB.body(13, color: GB.inkMuted, height: 1.4))),
+          )
+        : Column(children: [
+            for (var i = 0; i < app.goals.length; i++) ...[
+              if (i > 0) Divider(height: 8, color: GB.line),
+              row(app.goals[i]),
+            ],
+          ]),
+  );
+}
+
+/// Thêm hoặc sửa một mục tiêu quỹ (sửa thì có thêm nút Xoá).
+Future<void> _goalDialog(BuildContext context, {FundGoal? edit}) async {
+  final n = TextEditingController(text: edit?.name ?? '');
+  final t = TextEditingController(text: edit != null && edit.target > 0 ? edit.target.toString() : '');
+  final r = await showDialog<String>(
     context: context,
     builder: (ctx) => GlassAlert(
       backgroundColor: GB.cream,
-      title: Text('Mục tiêu của quỹ', style: GB.display(20, w: FontWeight.w700)),
+      title: Text(edit == null ? 'Thêm mục tiêu quỹ' : 'Sửa mục tiêu quỹ', style: GB.display(20, w: FontWeight.w700)),
       content: Column(mainAxisSize: MainAxisSize.min, children: [
         GlassField(controller: n, label: 'Tên mục tiêu', hint: 'Học phí lớp 1'),
         const SizedBox(height: 10),
         GlassField(controller: t, label: 'Số tiền đích (gõ 120tr…)', suffix: 'đ'),
       ]),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Huỷ', style: GB.body(14, w: FontWeight.w700, color: GB.inkMuted))),
-        TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Lưu', style: GB.body(14, w: FontWeight.w800, color: GB.accentDeep))),
+        TextButton(onPressed: () => Navigator.pop(ctx, 'cancel'), child: Text('Huỷ', style: GB.body(14, w: FontWeight.w700, color: GB.inkMuted))),
+        if (edit != null) TextButton(onPressed: () => Navigator.pop(ctx, 'delete'), child: Text('Xoá', style: GB.body(14, w: FontWeight.w700, color: GB.alert))),
+        TextButton(onPressed: () => Navigator.pop(ctx, 'save'), child: Text('Lưu', style: GB.body(14, w: FontWeight.w800, color: GB.accentDeep))),
       ],
     ),
   );
-  if (ok == true) app.setGoal(FundGoal(name: n.text.trim(), target: parseMoney(t.text) ?? 0));
+  if (r == 'delete' && edit != null) {
+    app.removeGoal(edit.id);
+  } else if (r == 'save') {
+    final target = parseMoney(t.text) ?? 0;
+    if (n.text.trim().isEmpty && target <= 0) return;
+    if (edit == null) {
+      app.addGoal(FundGoal(name: n.text.trim(), target: target));
+    } else {
+      app.updateGoal(FundGoal(id: edit.id, name: n.text.trim(), target: target));
+    }
+  }
 }
 
 /// Thêm hoặc sửa một khoản trong quỹ: mở thành màn hình riêng giống màn nhập thu chi.
@@ -357,10 +407,7 @@ class _FundEditScreenState extends State<FundEditScreen> {
             const FormHeader('Ảnh', Icons.photo_camera_rounded, color: Color(0xFFDCEBF5), hint: 'Sổ tiết kiệm, biên nhận. Ảnh chỉ lưu trên máy'),
             Wrap(spacing: 10, runSpacing: 10, children: [
               for (final p in photos) PhotoThumb(p, onRemove: () => setState(() => photos.remove(p))),
-              AddPhotoButton(onTap: () async {
-                final id = await pickAndStorePhoto(context);
-                if (id != null) setState(() => photos.add(id));
-              }),
+              AddPhotoButton(onPicked: (id) => setState(() => photos.add(id))),
             ]),
           ]),
         ),

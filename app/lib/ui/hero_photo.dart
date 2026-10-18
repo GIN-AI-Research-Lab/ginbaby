@@ -8,11 +8,19 @@ import 'quick_logs.dart';
 /// Ảnh đầu trang: mặc định là tranh mẹ bế bé; bấm dấu + để chọn ảnh từ thư viện (hiện thành vòng tròn).
 /// Giữ lâu để quay về tranh mặc định.
 class HeroPhoto extends StatelessWidget {
-  const HeroPhoto({super.key, this.width = 150});
+  const HeroPhoto({super.key, this.width = 108, this.editable = false});
   final double width;
+  final bool editable; // chỉ ở màn Hồ sơ: chạm để đổi ảnh, giữ để về ảnh mặc định, có dấu +
 
   Future<void> _pick(BuildContext context) async {
-    final id = await pickAndStorePhoto(context);
+    final hasPhoto = app.settings.heroPhoto != null;
+    final c = await showPhotoMenu(context, removeLabel: hasPhoto ? 'Về ảnh mặc định' : null);
+    if (c == null || !context.mounted) return;
+    if (c == PhotoChoice.remove) {
+      _reset(context);
+      return;
+    }
+    final id = await pickAndStorePhoto(context, camera: c == PhotoChoice.camera);
     if (id == null) return;
     final old = app.settings.heroPhoto;
     app.settings.heroPhoto = id;
@@ -36,8 +44,22 @@ class HeroPhoto extends StatelessWidget {
       builder: (context, _) {
         final id = app.settings.heroPhoto;
         final bytes = id == null ? null : app.photo(id);
-        final h = width * .88;
-        final d = h * .92;
+        final d = width * .86; // đường kính ảnh tròn
+        final avatar = Container(
+          width: d,
+          height: d,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: GB.accentSoft,
+            border: Border.all(color: Colors.white, width: 3),
+            boxShadow: [BoxShadow(color: const Color(0xFFD9A79F).withValues(alpha: .35), blurRadius: 12, offset: const Offset(0, 4))],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: bytes != null
+              ? Image.memory(bytes, fit: BoxFit.cover, gaplessPlayback: true, filterQuality: FilterQuality.high, isAntiAlias: true)
+              : Center(child: Art('hero_mom_baby', width: d * .80, height: d * .80)) // thu gọn để thấy trọn hình, không bị khung tròn cắt viền,
+        );
+        if (!editable) return SizedBox(width: d + 6, height: d + 6, child: Align(alignment: Alignment.topLeft, child: avatar));
         return Semantics(
           button: true,
           label: 'Đổi ảnh đầu trang',
@@ -46,40 +68,23 @@ class HeroPhoto extends StatelessWidget {
             onTap: () => _pick(context),
             onLongPress: () => _reset(context),
             child: SizedBox(
-              width: width,
-              height: h,
+              width: d + 6,
+              height: d + 6,
               child: Stack(clipBehavior: Clip.none, children: [
-                if (bytes == null)
-                  Positioned.fill(child: Art('hero_mom_baby', width: width, alignment: Alignment.topRight))
-                else
-                  Positioned(
-                    right: 4,
-                    top: 2,
-                    child: Container(
-                      width: d,
-                      height: d,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
-                        boxShadow: [BoxShadow(color: const Color(0xFFD9A79F).withValues(alpha: .35), blurRadius: 14, offset: const Offset(0, 5))],
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Image.memory(bytes, fit: BoxFit.cover, gaplessPlayback: true),
-                    ),
-                  ),
+                Positioned(left: 0, top: 0, child: avatar),
                 Positioned(
-                  right: bytes == null ? 14 : 6,
-                  bottom: bytes == null ? 4 : 10,
+                  right: 0,
+                  bottom: 0,
                   child: Container(
-                    width: 26,
-                    height: 26,
+                    width: 24,
+                    height: 24,
                     decoration: BoxDecoration(
                       color: GB.accent,
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 2),
                       boxShadow: [BoxShadow(color: GB.accent.withValues(alpha: .35), blurRadius: 8, offset: const Offset(0, 3))],
                     ),
-                    child: const Icon(Icons.add_rounded, size: 17, color: Colors.white),
+                    child: const Icon(Icons.add_rounded, size: 16, color: Colors.white),
                   ),
                 ),
               ]),

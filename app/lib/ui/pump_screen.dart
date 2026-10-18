@@ -4,16 +4,16 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../core/kit.dart';
+import '../core/platform.dart';
 import '../core/pastel.dart';
 import '../core/theme.dart';
 import '../data/app_state.dart';
 import '../data/models.dart';
 import '../domain/pump_ref.dart';
-import 'bottle.dart';
 import 'history.dart';
 import 'widgets.dart';
 
-/// Ghi hút sữa: đồng hồ hai bên (trái/phải), lượng sữa, đánh giá nhẹ nhàng theo tuổi và cân nặng.
+/// Ghi hút sữa: bấm giờ hai bên (trái/phải); khi Kết thúc hiện ngay hộp nhập lượng sữa (hoặc nhập tay một cữ đã hút).
 class PumpScreen extends StatefulWidget {
   const PumpScreen({super.key});
 
@@ -24,14 +24,11 @@ class PumpScreen extends StatefulWidget {
 class _PumpScreenState extends State<PumpScreen> {
   static const goalMin = 20;
 
-  int l = 60, r = 60;
+  int l = 60, r = 60; // lượng gợi ý ban đầu cho hộp nhập
   int manualMin = 20;
   DateTime time = DateTime.now();
-  String store = 'fridge';
-  int bottles = 1;
-  String note = '';
   bool autoStop = true;
-  bool showBottles = false;
+  bool _sheetOpen = false;
 
   // đồng hồ
   Timer? _t;
@@ -51,6 +48,7 @@ class _PumpScreenState extends State<PumpScreen> {
     l = ((start / 2) / 10).round() * 10;
     r = l;
     _t = Timer.periodic(const Duration(milliseconds: 500), (_) {
+      keepScreenAwake(mounted && running); // đang bấm giờ thì không để màn hình tự khoá
       if (!mounted || !running) return;
       if (autoStop && _total.inSeconds >= goalMin * 60) {
         _end();
@@ -63,6 +61,7 @@ class _PumpScreenState extends State<PumpScreen> {
   @override
   void dispose() {
     _t?.cancel();
+    keepScreenAwake(false);
     super.dispose();
   }
 
@@ -101,6 +100,10 @@ class _PumpScreenState extends State<PumpScreen> {
       if (startAt != null) endAt = DateTime.now();
       if (accTotal.inSeconds > 0) manualMin = math.max(1, accTotal.inMinutes);
     });
+    // kết thúc xong hiện ngay hộp nhập lượng sữa (mẹ có thể đóng lại và mở lại bằng nút ở dưới)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_sheetOpen) _openEntry();
+    });
   }
 
   void _reset() {
@@ -134,216 +137,122 @@ class _PumpScreenState extends State<PumpScreen> {
         sessionsDone: app.pumpSessionsOn(time),
       );
 
-  int get _minutes => accTotal.inSeconds >= 60 ? math.max(1, _total.inMinutes) : manualMin;
-
-  Future<void> _save() async {
-    _flush();
-    final total = l + r;
-    final a = PumpRef.assess(ml: total, ageDays: app.age.adjDays, baseline: app.pumpBaseline(), perSessionGoal: _target().perSession);
-    final st = startAt ?? time;
-    final en = endAt ?? (startAt != null ? DateTime.now() : null);
-    final mins = _minutes;
-    app.addPump(mlL: l, mlR: r, minutes: mins, time: st, end: en ?? st.add(Duration(minutes: mins)), store: store, bottles: bottles, note: note);
-    running = false;
-    if (!mounted) return;
-    final t = _target();
-    await showGlassSheet(context, builder: (ctx) {
-      final doneToday = app.pumpedOn(st);
-      return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Orb(icon: Icons.check_rounded, color: GB.okBg),
-          const SizedBox(width: 12),
-          Expanded(child: Text('Đã ghi ${total}ml', style: GB.display(22, w: FontWeight.w700))),
-        ]),
-        const SizedBox(height: 14),
-        PumpAssessmentCard(a),
-        const SizedBox(height: 12),
-        Text('Hôm nay đã hút ${doneToday}ml · mục tiêu ~${t.dailyGoal.round()}ml', style: GB.body(13.5, w: FontWeight.w700)),
-        const SizedBox(height: 6),
-        RangeBar(value: doneToday.toDouble(), lo: t.dailyGoal * .85, hi: t.dailyGoal * 1.15, maxV: math.max(t.dailyGoal * 1.5, doneToday.toDouble())),
-        if (store != 'none') ...[
-          const SizedBox(height: 10),
-          Text('Đã thêm $bottles bình vào ${store == 'freezer' ? 'ngăn đông' : 'ngăn mát'}.', style: GB.body(13, color: GB.inkMuted)),
-        ],
-        const SizedBox(height: 14),
-        BigButton('Xong', onTap: () => Navigator.pop(ctx)),
-      ]);
-    });
-    if (mounted) Navigator.of(context).pop();
-  }
 
   String _clock(Duration d) => '${GB.two(d.inMinutes)}:${GB.two(d.inSeconds % 60)}';
 
-  Future<void> _editNote() async {
-    final c = TextEditingController(text: note);
-    final v = await showDialog<String>(
-      context: context,
-      builder: (dctx) => GlassAlert(
-        backgroundColor: GB.cream,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text('Ghi chú cho cữ hút', style: GB.display(20, w: FontWeight.w700)),
-        content: GlassField(controller: c, label: 'Ghi chú', maxLines: 3),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dctx), child: Text('Huỷ', style: GB.body(14, w: FontWeight.w700, color: GB.inkMuted))),
-          TextButton(onPressed: () => Navigator.pop(dctx, c.text.trim()), child: Text('Lưu', style: GB.body(14, w: FontWeight.w800, color: GB.accentDeep))),
-        ],
+  /// Mở hộp nhập lượng sữa. [manual]: nhập tay một cữ đã hút (không bấm giờ).
+  Future<void> _openEntry({bool manual = false}) async {
+    _flush();
+    _sheetOpen = true;
+    final timed = !manual && startAt != null;
+    final res = await showGlassSheet<_PumpResult>(
+      context,
+      builder: (ctx) => _PumpEntrySheet(
+        l: l,
+        r: r,
+        timed: timed,
+        minutes: timed ? math.max(1, accTotal.inMinutes) : manualMin,
+        time: timed ? startAt! : time,
+        last: app.ofType(T.pump).firstOrNull,
       ),
     );
-    if (v != null) setState(() => note = v);
+    _sheetOpen = false;
+    if (res == null || !mounted) return;
+    await _commit(res, timed: timed);
+  }
+
+  Future<void> _commit(_PumpResult res, {required bool timed}) async {
+    final total = res.l + res.r;
+    final a = PumpRef.assess(ml: total, ageDays: app.age.adjDays, baseline: app.pumpBaseline(), perSessionGoal: _target().perSession);
+    final st = res.time;
+    final en = timed ? (endAt ?? DateTime.now()) : st.add(Duration(minutes: res.minutes));
+    final e = app.addPump(mlL: res.l, mlR: res.r, minutes: res.minutes, time: st, end: en, store: res.store, bottles: res.bottles, note: res.note);
+    running = false;
+    if (!mounted) return;
+    final t = _target();
+    final doneToday = app.pumpedOn(st);
+    // Lượng thấp hơn thường gặp thì hiện lời khuyên; còn lại chỉ báo ngắn (đỡ một lần chạm "Xong").
+    if (total > 0 && a.verdict == PumpVerdict.lower) {
+      await showGlassSheet(context, builder: (ctx) {
+        return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Orb(icon: Icons.check_rounded, color: GB.okBg),
+            const SizedBox(width: 12),
+            Expanded(child: Text('Đã ghi ${total}ml', style: GB.display(22, w: FontWeight.w700))),
+          ]),
+          const SizedBox(height: 14),
+          PumpAssessmentCard(a),
+          const SizedBox(height: 12),
+          Text('Hôm nay đã hút ${doneToday}ml · mục tiêu ~${t.dailyGoal.round()}ml', style: GB.body(13.5, w: FontWeight.w700)),
+          const SizedBox(height: 6),
+          RangeBar(value: doneToday.toDouble(), lo: t.dailyGoal * .85, hi: t.dailyGoal * 1.15, maxV: math.max(t.dailyGoal * 1.5, doneToday.toDouble())),
+          if (res.store != 'none') ...[
+            const SizedBox(height: 10),
+            Text('Đã thêm ${res.bottles} bình vào ${res.store == 'freezer' ? 'ngăn đông' : 'ngăn mát'}.', style: GB.body(13, color: GB.inkMuted)),
+          ],
+          const SizedBox(height: 14),
+          BigButton('Xong', onTap: () => Navigator.pop(ctx)),
+        ]);
+      });
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
+    final nav = Navigator.of(context);
+    toast(context, total > 0 ? 'Đã ghi ${total}ml · hôm nay $doneToday/${t.dailyGoal.round()}ml' : 'Đã ghi cữ hút ${res.minutes} phút', undo: res.store == 'none' ? () => app.removeEntry(e.id) : null);
+    nav.pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    final t = _target();
-    final age = app.age;
-    final total = l + r;
-    final base = app.pumpBaseline();
-    final a = PumpRef.assess(ml: total, ageDays: age.adjDays, baseline: base, perSessionGoal: t.perSession);
     final done = app.pumpSessionsOn(time) + 1;
-    final range = PumpRef.perSession(age.adjDays);
-    final recent = app.ofType(T.pump).take(3).toList();
+    final ended = endAt != null;
     final started = startAt != null;
+    final recent = app.ofType(T.pump).take(3).toList();
+
+    final String label;
+    final IconData icon;
+    final VoidCallback action;
+    if (!started) {
+      label = 'Bắt đầu hút';
+      icon = Icons.play_arrow_rounded;
+      action = _toggle;
+    } else if (!ended) {
+      label = 'Kết thúc và nhập lượng sữa';
+      icon = Icons.stop_rounded;
+      action = _end;
+    } else {
+      label = 'Nhập lượng sữa';
+      icon = Icons.water_drop_rounded;
+      action = () => _openEntry();
+    }
 
     return SubPage(
       title: 'Hút sữa',
-      subtitle: 'Lưu lại hành trình nhỏ bé tạo nên yêu thương lớn lao',
+      subtitle: 'Bấm giờ, kết thúc rồi nhập lượng sữa',
       art: 'hero_pump',
       artWidth: 150,
-      bottom: BigButton('Lưu · ${total}ml', icon: Icons.check_rounded, enabled: total > 0, onTap: _save),
+      bottom: BigButton(label, icon: icon, onTap: action),
       children: [
         _timerCard(done),
-        const SizedBox(height: 12),
-        TimeRow(label: started ? 'Bắt đầu' : 'Lúc', time: startAt ?? time, onChanged: (d) => setState(() {
-              time = d;
-              if (startAt != null) startAt = d;
-            })),
-        if (!started || !running)
-          Padding(
-            padding: const EdgeInsets.only(top: 10),
+        const SizedBox(height: 10),
+        if (!started)
+          Semantics(
+            button: true,
+            label: 'Nhập tay một cữ đã hút',
             child: GlassCard(
               radius: 20,
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              onTap: () => _openEntry(manual: true),
               child: Row(children: [
-                Expanded(child: Text(accTotal.inSeconds >= 60 ? 'Thời gian hút ${_clock(accTotal)}' : 'Hoặc nhập tay số phút', style: GB.body(13.5, w: FontWeight.w700))),
-                if (accTotal.inSeconds < 60) ...[
-                  RoundIconButton(icon: Icons.remove_rounded, label: 'Giảm 5 phút', size: 38, onTap: () => setState(() => manualMin = math.max(5, manualMin - 5))),
-                  SizedBox(width: 70, child: Text('$manualMin phút', textAlign: TextAlign.center, style: GB.body(14.5, w: FontWeight.w800))),
-                  RoundIconButton(icon: Icons.add_rounded, label: 'Tăng 5 phút', size: 38, filled: true, onTap: () => setState(() => manualMin = math.min(60, manualMin + 5))),
-                ],
+                Icon(Icons.edit_note_rounded, color: GB.accentDeep, size: 24),
+                const SizedBox(width: 10),
+                Expanded(child: Text('Nhập tay một cữ đã hút (không bấm giờ)', style: GB.body(14, w: FontWeight.w700))),
+                Icon(Icons.chevron_right_rounded, color: GB.inkMuted),
               ]),
             ),
           ),
-        const SizedBox(height: 14),
-        GlassCard(
-          radius: 26,
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Icon(Icons.water_drop_rounded, color: GB.pumpDeep, size: 24),
-              const SizedBox(width: 6),
-              Expanded(child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('Lượng sữa sau cữ hút', style: GB.display(16.5, w: FontWeight.w800)))),
-              Text('Tự động dừng', style: GB.body(11.5, color: GB.inkMuted)),
-              const SizedBox(width: 2),
-              Icon(Icons.info_outline_rounded, size: 14, color: GB.inkMuted),
-              Transform.scale(scale: .8, child: Switch(value: autoStop, activeThumbColor: Colors.white, activeTrackColor: GB.pumpDeep, materialTapTargetSize: MaterialTapTargetSize.shrinkWrap, onChanged: (v) => setState(() => autoStop = v))),
-            ]),
-            const SizedBox(height: 10),
-            IntrinsicHeight(
-              child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Expanded(child: _amount('Trái', l, GB.pumpTile, GB.pumpDeep, (v) => setState(() => l = v))),
-                const SizedBox(width: 8),
-                Expanded(child: _amount('Phải', r, GB.bottleTile, GB.bottleDeep, (v) => setState(() => r = v))),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
-                    decoration: BoxDecoration(color: GB.p(Color(0xFFFFF3D6)), borderRadius: BorderRadius.circular(18), border: Border.all(color: GB.edgeOf(GB.p(Color(0xFFFFF3D6))), width: 1)),
-                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        const Icon(Icons.water_drop_rounded, size: 18, color: Color(0xFFF2B632)),
-                        const SizedBox(width: 3),
-                        Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text('Tổng cộng', style: GB.body(12.5, w: FontWeight.w700)))),
-                      ]),
-                      const SizedBox(height: 8),
-                      BigNumber('$total', 'ml', size: 26),
-                    ]),
-                  ),
-                ),
-              ]),
-            ),
-            const SizedBox(height: 10),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: _editNote,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                decoration: BoxDecoration(color: GB.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: GB.line)),
-                child: Row(children: [
-                  Icon(Icons.edit_note_rounded, color: GB.inkMuted),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(note.isEmpty ? 'Thêm ghi chú cho cữ hút này...' : note, style: GB.body(13.5, color: note.isEmpty ? GB.inkMuted : GB.ink))),
-                  Icon(Icons.chevron_right_rounded, color: GB.inkMuted),
-                ]),
-              ),
-            ),
-            const SizedBox(height: 8),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => setState(() => showBottles = !showBottles),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(children: [
-                  Icon(showBottles ? Icons.expand_less_rounded : Icons.expand_more_rounded, color: GB.accentDeep),
-                  const SizedBox(width: 6),
-                  Text(showBottles ? 'Ẩn hình bình sữa' : 'Kéo mực sữa trên hình bình', style: GB.body(13, w: FontWeight.w700, color: GB.accentDeep)),
-                ]),
-              ),
-            ),
-            if (showBottles)
-              Row(children: [
-                Expanded(child: _bottle('Trái', l, (v) => setState(() => l = v))),
-                const SizedBox(width: 8),
-                Expanded(child: _bottle('Phải', r, (v) => setState(() => r = v))),
-              ]),
-          ]),
-        ),
-        const SizedBox(height: 12),
-        Center(child: Text('Thường gặp ${range.text()} mỗi cữ${base != null ? ' · mẹ thường hút ~${base.round()}ml' : ''}', textAlign: TextAlign.center, style: GB.body(12.5, color: GB.inkMuted))),
-        const SizedBox(height: 12),
-        PumpAssessmentCard(a),
-        const SizedBox(height: 14),
-        GlassCard(
-          radius: 24,
-          padding: const EdgeInsets.all(14),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Mục tiêu tham khảo', style: GB.body(13, w: FontWeight.w700, color: GB.inkMuted)),
-            const SizedBox(height: 4),
-            Text('Bé cần khoảng ${t.dailyNeed.text()} sữa/ngày. Với mục tiêu lấy ${app.settings.pumpShare}% từ sữa hút, mẹ nên hút ~${t.dailyGoal.round()}ml/ngày, trung bình ~${t.perSession.round()}ml mỗi cữ.', style: GB.body(13.5, height: 1.45)),
-            if (t.remainingSessions > 0 && app.pumpedOn(time) > 0) ...[
-              const SizedBox(height: 6),
-              Text('Còn ${t.remainingSessions} cữ: cần ~${t.perSessionRemaining.round()}ml mỗi cữ để chạm mục tiêu hôm nay.', style: GB.body(13, w: FontWeight.w700, color: GB.accentDeep)),
-            ],
-          ]),
-        ),
-        const SizedBox(height: 14),
-        Text('Lưu vào tủ sữa', style: GB.body(14, w: FontWeight.w800)),
-        const SizedBox(height: 8),
-        Seg(labels: const ['Không', 'Ngăn mát', 'Ngăn đông'], index: const ['none', 'fridge', 'freezer'].indexOf(store), height: 40, onChanged: (i) => setState(() => store = const ['none', 'fridge', 'freezer'][i])),
-        if (store != 'none') ...[
-          const SizedBox(height: 10),
-          GlassCard(
-            radius: 20,
-            padding: const EdgeInsets.all(14),
-            child: Row(children: [
-              Expanded(child: Text('Chia thành $bottles bình · ~${(total / bottles).round()}ml mỗi bình', style: GB.body(13.5, w: FontWeight.w600))),
-              RoundIconButton(icon: Icons.remove_rounded, label: 'Bớt một bình', size: 40, onTap: () => setState(() => bottles = math.max(1, bottles - 1))),
-              const SizedBox(width: 8),
-              RoundIconButton(icon: Icons.add_rounded, label: 'Thêm một bình', size: 40, filled: true, onTap: () => setState(() => bottles = math.min(8, bottles + 1))),
-            ]),
-          ),
-          const SizedBox(height: 6),
-          Text('Hạn dùng tham khảo (CDC): ngăn mát tối đa 4 ngày, ngăn đông tốt nhất trong 6 tháng.', style: GB.body(11.5, color: GB.inkMuted)),
-        ],
+        const SizedBox(height: 10),
+        _todayCard(),
         const SizedBox(height: 14),
         SectionCard(
           title: 'Các cữ hút gần đây',
@@ -352,13 +261,38 @@ class _PumpScreenState extends State<PumpScreen> {
           trailing: 'Xem tất cả',
           onTrailing: () => openPage(context, const HistoryScreen()),
           padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
-          child: recent.isEmpty
-              ? const EmptyState('Chưa có cữ hút nào.')
-              : Column(children: [for (final e in recent) _recentRow(e)]),
+          child: recent.isEmpty ? const EmptyState('Chưa có cữ hút nào.') : Column(children: [for (final e in recent) _recentRow(e)]),
         ),
         const SizedBox(height: 12),
-        Text('Nguồn tham khảo: Kent 2006 (Pediatrics), tổng hợp của tư vấn viên sữa mẹ, CDC. Lượng hút không phản ánh toàn bộ lượng sữa mẹ. Không thay thế tư vấn bác sĩ.', style: GB.body(11.5, color: GB.inkMuted, height: 1.4)),
+        Text('Nguồn tham khảo: Kent 2006 (Pediatrics), tổng hợp của tư vấn viên sữa mẹ, CDC. Lượng hút không phản ánh toàn bộ lượng sữa mẹ. Không thay thế tư vấn của bác sĩ hoặc tư vấn viên sữa mẹ.', style: GB.body(11.5, color: GB.inkMuted, height: 1.4)),
       ],
+    );
+  }
+
+  // ───────── Tóm tắt hôm nay: số cữ, lượng đã hút so với mục tiêu, tự động dừng
+  Widget _todayCard() {
+    final t = _target();
+    final doneMl = app.pumpedOn(time);
+    final sessions = app.pumpSessionsOn(time);
+    return GlassCard(
+      radius: 22,
+      padding: const EdgeInsets.fromLTRB(14, 12, 10, 8),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(Icons.water_drop_rounded, size: 20, color: GB.pumpDeep),
+          const SizedBox(width: 8),
+          Expanded(child: Text('Hôm nay', style: GB.body(14.5, w: FontWeight.w800))),
+          Text('$sessions/${app.settings.pumpSessions} cữ · ${doneMl}ml', style: GB.body(13.5, w: FontWeight.w700, color: GB.accentDeep)),
+        ]),
+        const SizedBox(height: 8),
+        RangeBar(value: doneMl.toDouble(), lo: t.dailyGoal * .85, hi: t.dailyGoal * 1.15, maxV: math.max(t.dailyGoal * 1.5, doneMl.toDouble())),
+        const SizedBox(height: 4),
+        Text('Mục tiêu tham khảo ~${t.dailyGoal.round()}ml/ngày', style: GB.body(12, color: GB.inkMuted)),
+        Row(children: [
+          Expanded(child: Text('Tự động dừng sau $goalMin phút', style: GB.body(13, color: GB.inkMuted))),
+          Switch(value: autoStop, activeThumbColor: Colors.white, activeTrackColor: GB.pumpDeep, onChanged: (v) => setState(() => autoStop = v)),
+        ]),
+      ]),
     );
   }
 
@@ -452,48 +386,6 @@ class _PumpScreenState extends State<PumpScreen> {
     );
   }
 
-  Widget _amount(String name, int v, Color tile, Color deep, ValueChanged<int> on) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(6, 10, 6, 8),
-      decoration: BoxDecoration(color: tile.withValues(alpha: .5), borderRadius: BorderRadius.circular(18), border: Border.all(color: GB.edgeOf(tile.withValues(alpha: .5)), width: 1)),
-      child: Column(children: [
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(Icons.water_drop_rounded, size: 18, color: deep),
-          const SizedBox(width: 3),
-          Text(name, style: GB.body(12.5, w: FontWeight.w700)),
-        ]),
-        const SizedBox(height: 8),
-        BigNumber('$v', 'ml', size: 24),
-        const SizedBox(height: 8),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          _mini(Icons.remove_rounded, 'Giảm $name 10ml', deep, false, () => on(math.max(0, v - 10))),
-          const SizedBox(width: 8),
-          _mini(Icons.add_rounded, 'Tăng $name 10ml', deep, true, () => on(math.min(300, v + 10))),
-        ]),
-      ]),
-    );
-  }
-
-  Widget _mini(IconData ic, String label, Color deep, bool filled, VoidCallback onTap) => Semantics(
-        button: true,
-        label: label,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(color: filled ? deep : GB.w(.7), shape: BoxShape.circle),
-            child: Icon(ic, size: 18, color: filled ? Colors.white : deep),
-          ),
-        ),
-      );
-
-  Widget _bottle(String name, int v, ValueChanged<int> on) => Column(children: [
-        Text(name, style: GB.body(13, w: FontWeight.w700, color: GB.inkMuted)),
-        BottleView(ml: v, cap: 200, color: GB.milkBottle, width: 120, onChanged: on, label: 'Sữa bên $name'),
-      ]);
-
   Widget _recentRow(Entry e) {
     final mins = e.end == null ? e.num('min').round() : e.end!.difference(e.time).inMinutes;
     final end = e.end ?? e.time.add(Duration(minutes: mins));
@@ -550,4 +442,157 @@ class _RingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RingPainter old) => old.progress != progress;
+}
+
+
+/// Kết quả hộp nhập lượng sữa.
+class _PumpResult {
+  const _PumpResult({required this.l, required this.r, required this.minutes, required this.time, required this.store, required this.bottles, required this.note});
+  final int l, r, minutes;
+  final DateTime time;
+  final String store;
+  final int bottles;
+  final String note;
+}
+
+/// Hộp nhập lượng sữa sau cữ hút: số ml từng bên (bước 5), chọn nhanh, lưu vào tủ sữa, ghi chú.
+class _PumpEntrySheet extends StatefulWidget {
+  const _PumpEntrySheet({required this.l, required this.r, required this.timed, required this.minutes, required this.time, required this.last});
+  final int l, r;
+  final bool timed; // đã bấm giờ: hiện thời gian đã hút; chưa thì cho nhập giờ và số phút
+  final int minutes;
+  final DateTime time;
+  final Entry? last;
+
+  @override
+  State<_PumpEntrySheet> createState() => _PumpEntrySheetState();
+}
+
+class _PumpEntrySheetState extends State<_PumpEntrySheet> {
+  late int l = widget.l, r = widget.r, minutes = widget.minutes;
+  late DateTime time = widget.time;
+  String store = 'fridge';
+  int bottles = 1;
+  final note = TextEditingController();
+
+  @override
+  void dispose() {
+    note.dispose();
+    super.dispose();
+  }
+
+  int get total => l + r;
+
+  Widget _side(String name, int v, Color tile, Color deep, ValueChanged<int> on) {
+    Widget mini(IconData ic, String label, bool filled, VoidCallback tap) => Semantics(
+          button: true,
+          label: label,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: tap,
+            child: minHit(Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(color: filled ? deep : GB.w(.7), shape: BoxShape.circle),
+              child: Icon(ic, size: 22, color: filled ? Colors.white : deep),
+            )),
+          ),
+        );
+    return Container(
+      padding: const EdgeInsets.fromLTRB(6, 12, 6, 8),
+      decoration: BoxDecoration(color: tile.withValues(alpha: .5), borderRadius: BorderRadius.circular(18), border: Border.all(color: GB.edgeOf(tile.withValues(alpha: .5)), width: 1)),
+      child: Column(children: [
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(Icons.water_drop_rounded, size: 18, color: deep),
+          const SizedBox(width: 4),
+          Text(name, style: GB.body(13.5, w: FontWeight.w800)),
+        ]),
+        const SizedBox(height: 8),
+        BigNumber('$v', 'ml', size: 30),
+        const SizedBox(height: 8),
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          mini(Icons.remove_rounded, 'Giảm $name 5ml', false, () => on(math.max(0, v - 5))),
+          mini(Icons.add_rounded, 'Tăng $name 5ml', true, () => on(math.min(300, v + 5))),
+        ]),
+      ]),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final last = widget.last;
+    final lastL = last == null ? 0 : last.num('l').round();
+    final lastR = last == null ? 0 : last.num('r').round();
+    final hasLast = last != null && lastL + lastR > 0;
+    final a = PumpRef.assess(ml: total, ageDays: app.age.adjDays, baseline: app.pumpBaseline(), perSessionGoal: PumpRef.target(ageDays: app.age.adjDays, weightKg: app.weightKg, sessionsPerDay: app.settings.pumpSessions, pumpShare: app.settings.pumpShare, pumpedToday: app.pumpedOn(time).toDouble(), sessionsDone: app.pumpSessionsOn(time)).perSession);
+
+    return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('Lượng sữa đã hút', style: GB.display(22, w: FontWeight.w700)),
+      const SizedBox(height: 4),
+      if (widget.timed)
+        Text('Đã hút $minutes phút · bắt đầu ${GB.hm(time)}', style: GB.body(13, color: GB.inkMuted))
+      else ...[
+        Text('Nhập tay một cữ đã hút', style: GB.body(13, color: GB.inkMuted)),
+        const SizedBox(height: 10),
+        TimeRow(label: 'Lúc', time: time, onChanged: (d) => setState(() => time = d)),
+        const SizedBox(height: 8),
+        Row(children: [
+          Expanded(child: Text('Thời gian hút', style: GB.body(14, w: FontWeight.w700))),
+          RoundIconButton(icon: Icons.remove_rounded, label: 'Giảm 5 phút', size: 40, onTap: () => setState(() => minutes = math.max(5, minutes - 5))),
+          SizedBox(width: 78, child: Text('$minutes phút', textAlign: TextAlign.center, style: GB.body(15, w: FontWeight.w800))),
+          RoundIconButton(icon: Icons.add_rounded, label: 'Tăng 5 phút', size: 40, filled: true, onTap: () => setState(() => minutes = math.min(60, minutes + 5))),
+        ]),
+      ],
+      const SizedBox(height: 14),
+      IntrinsicHeight(
+        child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Expanded(child: _side('Trái', l, GB.pumpTile, GB.pumpDeep, (v) => setState(() => l = v))),
+          const SizedBox(width: 10),
+          Expanded(child: _side('Phải', r, GB.bottleTile, GB.bottleDeep, (v) => setState(() => r = v))),
+        ]),
+      ),
+      const SizedBox(height: 10),
+      Row(children: [
+        Icon(Icons.water_drop_rounded, size: 18, color: const Color(0xFFF2B632)),
+        const SizedBox(width: 6),
+        Text('Tổng cộng $total ml', style: GB.body(16, w: FontWeight.w800)),
+        const SizedBox(width: 8),
+        Expanded(child: Text(total > 0 ? a.title : '', maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: GB.body(12.5, color: GB.inkMuted))),
+      ]),
+      const SizedBox(height: 12),
+      Text('Chọn nhanh (Trái + Phải)', style: GB.body(12.5, w: FontWeight.w700, color: GB.inkMuted)),
+      const SizedBox(height: 6),
+      Wrap(spacing: 8, runSpacing: 8, children: [
+        if (hasLast) PillChip(label: 'Lần trước ($lastL+$lastR)', icon: Icons.replay_rounded, on: l == lastL && r == lastR, onTap: () => setState(() {
+              l = lastL;
+              r = lastR;
+            })),
+        for (final v in const [20, 30, 40, 50, 60]) PillChip(label: '$v+$v', on: l == v && r == v, onTap: () => setState(() => l = r = v)),
+      ]),
+      const SizedBox(height: 12),
+      Text('Lưu vào tủ sữa', style: GB.body(14, w: FontWeight.w800)),
+      const SizedBox(height: 8),
+      Seg(labels: const ['Không', 'Ngăn mát', 'Ngăn đông'], index: const ['none', 'fridge', 'freezer'].indexOf(store), height: 44, onChanged: (i) => setState(() => store = const ['none', 'fridge', 'freezer'][i])),
+      if (store != 'none') ...[
+        const SizedBox(height: 8),
+        Row(children: [
+          Expanded(child: Text('Chia thành $bottles bình · ~${(total / bottles).round()}ml mỗi bình', style: GB.body(13, w: FontWeight.w600))),
+          RoundIconButton(icon: Icons.remove_rounded, label: 'Bớt một bình', size: 40, onTap: () => setState(() => bottles = math.max(1, bottles - 1))),
+          const SizedBox(width: 6),
+          RoundIconButton(icon: Icons.add_rounded, label: 'Thêm một bình', size: 40, filled: true, onTap: () => setState(() => bottles = math.min(8, bottles + 1))),
+        ]),
+      ],
+      const SizedBox(height: 12),
+      GlassField(controller: note, label: 'Ghi chú (không bắt buộc)', icon: Icons.edit_note_rounded),
+      const SizedBox(height: 16),
+      BigButton(total > 0 ? 'Lưu · ${total}ml' : 'Lưu cữ hút', icon: Icons.check_rounded, onTap: () {
+        Navigator.pop(context, _PumpResult(l: l, r: r, minutes: minutes, time: time, store: total > 0 ? store : 'none', bottles: bottles, note: note.text.trim()));
+      }),
+      if (total == 0)
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Center(child: Text('Chưa nhập lượng sữa: cữ hút vẫn được lưu với số phút.', style: GB.body(12, color: GB.inkMuted))),
+        ),
+    ]);
+  }
 }

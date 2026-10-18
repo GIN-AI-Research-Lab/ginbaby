@@ -24,6 +24,17 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  /// Hàng chỉnh giờ (0-23) bằng nút − và +, quay vòng qua nửa đêm.
+  Widget _hourRow(String label, int h, ValueChanged<int> onChanged) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(children: [
+          Expanded(child: Text(label, style: GB.body(14, w: FontWeight.w700))),
+          RoundIconButton(icon: Icons.remove_rounded, label: 'Giảm 1 giờ ($label)', size: 36, onTap: () => onChanged((h + 23) % 24)),
+          SizedBox(width: 64, child: Text('${h}h', textAlign: TextAlign.center, style: GB.body(16, w: FontWeight.w800))),
+          RoundIconButton(icon: Icons.add_rounded, label: 'Tăng 1 giờ ($label)', size: 36, filled: true, onTap: () => onChanged((h + 1) % 24)),
+        ]),
+      );
+
   Widget _card(String title, List<Widget> children) => Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: GlassCard(
@@ -120,10 +131,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             _card('Giao diện', [
-              Seg(labels: const ['Theo máy', 'Sáng', 'Tối'], index: s.themeMode, height: 42, onChanged: (i) {
+              Seg(labels: const ['Theo máy', 'Sáng', 'Tối', 'Theo giờ'], index: s.themeMode.clamp(0, 3), height: 42, onChanged: (i) {
                 s.themeMode = i;
                 app.settingsChanged();
               }),
+              if (s.themeMode == 3) ...[
+                const SizedBox(height: 10),
+                _hourRow('Giao diện tối từ', s.darkFrom, (h) {
+                  s.darkFrom = h;
+                  app.settingsChanged();
+                }),
+                _hourRow('Trở lại sáng lúc', s.darkTo, (h) {
+                  s.darkTo = h;
+                  app.settingsChanged();
+                }),
+                Text('App tự đổi sáng/tối đúng giờ, kể cả khi đang mở. Chạm nút mặt trăng trên Trang chủ sẽ chuyển sang chế độ cố định.', style: GB.body(12, color: GB.inkMuted, height: 1.4)),
+              ],
               const SizedBox(height: 6),
               Text('Hiệu ứng kính mờ', style: GB.body(14.5, w: FontWeight.w700)),
               const SizedBox(height: 6),

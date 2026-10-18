@@ -52,7 +52,7 @@ class PremiumScreen extends StatelessWidget {
               tint: GB.warnBg,
               opacity: .75,
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [Expanded(child: Text('Premium', style: GB.display(22, w: FontWeight.w700))), Tag('Sắp có', bg: Colors.white, fg: GB.warn)]),
+                Row(children: [Expanded(child: Text('Premium', style: GB.display(22, w: FontWeight.w700))), Tag('Sắp có', bg: GB.dark ? Colors.white.withValues(alpha: .14) : Colors.white, fg: GB.warn)]),
                 const SizedBox(height: 4),
                 Text('Dành cho mẹ cần bộ sữa nâng cao, thu chi và chia sẻ gia đình.', style: GB.body(13, color: GB.warn)),
                 const SizedBox(height: 10),

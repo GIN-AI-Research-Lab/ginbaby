@@ -246,7 +246,7 @@ class _MenuCustomizeScreenState extends State<MenuCustomizeScreen> {
           actions: [
             RoundIconButton(icon: Icons.restart_alt_rounded, label: 'Về mặc định', size: 44, onTap: () {
               s.footer = const ['history', 'stats', 'money'];
-              s.favs = const ['pump', 'breast', 'bottle', 'sleep'];
+              s.favs = const ['pump', 'feed', 'sleep', 'diaper'];
               app.settingsChanged();
               toast(context, 'Đã đưa menu về mặc định');
             }),

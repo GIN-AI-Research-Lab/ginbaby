@@ -12,7 +12,7 @@ import '../domain/epds.dart';
 class MindScreen extends StatelessWidget {
   const MindScreen({super.key});
 
-  static final _moods = [('Mệt', Icons.sentiment_very_dissatisfied_rounded, Color(0xFFF0B5B9)), ('Bình thường', Icons.sentiment_neutral_rounded, GB.p(Color(0xFFE3E6F6))), ('Ổn', Icons.sentiment_satisfied_rounded, GB.p(Color(0xFFE4EBD2))), ('Vui', Icons.sentiment_very_satisfied_rounded, GB.p(Color(0xFFF8E9A8)))];
+  static List<(String, IconData, Color)> get _moods => [('Mệt', Icons.sentiment_very_dissatisfied_rounded, Color(0xFFF0B5B9)), ('Bình thường', Icons.sentiment_neutral_rounded, GB.p(Color(0xFFE3E6F6))), ('Ổn', Icons.sentiment_satisfied_rounded, GB.p(Color(0xFFE4EBD2))), ('Vui', Icons.sentiment_very_satisfied_rounded, GB.p(Color(0xFFF8E9A8)))];
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +64,7 @@ class MindScreen extends StatelessWidget {
                       child: Container(
                         height: 30,
                         margin: const EdgeInsets.symmetric(horizontal: 1.5),
-                        decoration: BoxDecoration(color: moodOn(d) == null ? GB.w(.5) : _moods[moodOn(d)!.mood].$3, borderRadius: BorderRadius.circular(8)),
+                        decoration: BoxDecoration(color: moodOn(d) == null ? GB.ink.withValues(alpha: .08) : _moods[moodOn(d)!.mood].$3, borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
                 ]),

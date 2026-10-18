@@ -24,7 +24,19 @@ class AppState extends ChangeNotifier {
   final List<MoneyTag> tags = [];
   final List<Tx> txs = [];
   final List<FundItem> funds = [];
-  FundGoal goal = FundGoal();
+  final List<FundGoal> goals = [];
+
+  /// Mục tiêu quỹ đầu tiên (tương thích bản cũ chỉ có một mục tiêu).
+  FundGoal get goal => goals.firstOrNull ?? FundGoal(id: '_none');
+  set goal(FundGoal g) {
+    goals
+      ..clear()
+      ..add(g);
+  }
+
+  // Nhiều bé: mỗi bé có kho dữ liệu riêng (bé đầu tiên 'main' giữ nguyên khoá cũ, bé thêm dùng tiền tố b.<id>.).
+  final List<BabyRef> babies = [];
+  String activeId = 'main';
   final List<Measurement> measurements = [];
   final Map<String, VaxRecord> vax = {};
   final List<Appointment> appts = [];
@@ -40,6 +52,31 @@ class AppState extends ChangeNotifier {
   bool ready = false;
 
   static const _k = 'gb1.';
+
+  /// Các khoá dữ liệu riêng của từng bé; còn lại (cài đặt, thành viên, nhãn thu chi, tâm trạng mẹ, EPDS) dùng chung.
+  static const _scoped = {'baby', 'entries', 'fridge', 'tx', 'funds', 'goals', 'meas', 'vax', 'appts', 'miles', 'memos', 'teeth', 'fussy'};
+  static String _pre(String id) => id == 'main' ? '' : 'b.$id.';
+  String _key(String k, [String? id]) => _scoped.contains(k) ? '$_k${_pre(id ?? activeId)}$k' : '$_k$k';
+
+  Future<Map<String, dynamic>?> _obj(String k) async {
+    final s = await _kv?.get(_key(k));
+    if (s == null) return null;
+    try {
+      return Map<String, dynamic>.from(jsonDecode(s) as Map);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _list(String k) async {
+    final s = await _kv?.get(_key(k));
+    if (s == null) return [];
+    try {
+      return (jsonDecode(s) as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    } catch (_) {
+      return [];
+    }
+  }
 
   /// Di chuyển dữ liệu cũ (localStorage/SharedPreferences) sang kho mới một lần.
   Future<void> _migrateFromPrefs(KV kv) async {
@@ -62,58 +99,31 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<void> init() async {
-    final kv = await KV.open();
-    _kv = kv;
-    await _migrateFromPrefs(kv);
+  Future<void> init({KV? kv}) async {
+    final store = kv ?? await KV.open();
+    _kv = store;
+    await _migrateFromPrefs(store);
 
-    Future<Map<String, dynamic>?> obj(String k) async {
-      final s = await kv.get('$_k$k');
-      if (s == null) return null;
-      try {
-        return Map<String, dynamic>.from(jsonDecode(s) as Map);
-      } catch (_) {
-        return null;
-      }
+    // danh sách bé và bé đang xem (khoá chung)
+    babies
+      ..clear()
+      ..addAll((await _list('babies')).map(BabyRef.fromJson));
+    activeId = await store.get('${_k}active') ?? 'main';
+    if (!babies.any((b) => b.id == activeId)) activeId = babies.isEmpty ? 'main' : babies.first.id;
+    await _loadScoped();
+    if (baby != null && !babies.any((b) => b.id == activeId)) babies.add(BabyRef(id: activeId, name: baby!.name, dob: baby!.dob, girl: baby!.sex == Sex.girl));
+    final cur = babies.where((b) => b.id == activeId).firstOrNull;
+    if (cur != null && baby != null && cur.dob == null) {
+      cur
+        ..dob = baby!.dob
+        ..girl = baby!.sex == Sex.girl;
     }
 
-    Future<List<Map<String, dynamic>>> list(String k) async {
-      final s = await kv.get('$_k$k');
-      if (s == null) return [];
-      try {
-        return (jsonDecode(s) as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
-      } catch (_) {
-        return [];
-      }
-    }
-
-    final b = await obj('baby');
-    if (b != null) baby = Baby.fromJson(b);
-    entries.addAll((await list('entries')).map(Entry.fromJson));
-    fridge.addAll((await list('fridge')).map(FridgeItem.fromJson));
-    tags.addAll((await list('tags')).map(MoneyTag.fromJson));
-    txs.addAll((await list('tx')).map(Tx.fromJson));
-    funds.addAll((await list('funds')).map(FundItem.fromJson));
-    final g = await obj('goal');
-    if (g != null) goal = FundGoal.fromJson(g);
-    measurements.addAll((await list('meas')).map(Measurement.fromJson));
-    final v = await obj('vax');
-    if (v != null) {
-      v.forEach((k, e) => vax[k] = VaxRecord.fromJson(Map<String, dynamic>.from(e as Map)));
-    }
-    appts.addAll((await list('appts')).map(Appointment.fromJson));
-    moods.addAll((await list('moods')).map(MoodEntry.fromJson));
-    epds.addAll((await list('epds')).map(EpdsResult.fromJson));
-    final ms = await obj('miles');
-    if (ms != null) ms.forEach((k, e) => milestones[k] = dtFrom(e));
-    final mm = await obj('memos');
-    if (mm != null) mm.forEach((k, e) => memos[k] = MilestoneMemo.fromJson(Map<String, dynamic>.from(e as Map)));
-    final th = await obj('teeth');
-    if (th != null) th.forEach((k, e) => teeth[k] = dtFrom(e));
-    final fz = await obj('fussy');
-    if (fz != null) fz.forEach((k, e) => fussyDays[k] = (e as num).toInt());
-    members.addAll((await list('members')).map(Member.fromJson));
-    final s = await obj('settings');
+    tags.addAll((await _list('tags')).map(MoneyTag.fromJson));
+    moods.addAll((await _list('moods')).map(MoodEntry.fromJson));
+    epds.addAll((await _list('epds')).map(EpdsResult.fromJson));
+    members.addAll((await _list('members')).map(Member.fromJson));
+    final s = await _obj('settings');
     if (s != null) settings = Settings.fromJson(s);
     glassLite.value = settings.lite;
     if (tags.isEmpty) _seedTags();
@@ -121,6 +131,54 @@ class AppState extends ChangeNotifier {
     ready = true;
     notifyListeners();
     unawaited(_loadPhotos());
+  }
+
+  /// Nạp dữ liệu của bé đang xem (xoá dữ liệu bé trước trong bộ nhớ).
+  Future<void> _loadScoped() async {
+    baby = null;
+    entries.clear();
+    fridge.clear();
+    txs.clear();
+    funds.clear();
+    goals.clear();
+    measurements.clear();
+    vax.clear();
+    appts.clear();
+    milestones.clear();
+    memos.clear();
+    teeth.clear();
+    fussyDays.clear();
+    final b = await _obj('baby');
+    if (b != null) baby = Baby.fromJson(b);
+    entries.addAll((await _list('entries')).map(Entry.fromJson));
+    fridge.addAll((await _list('fridge')).map(FridgeItem.fromJson));
+    txs.addAll((await _list('tx')).map(Tx.fromJson));
+    funds.addAll((await _list('funds')).map(FundItem.fromJson));
+    goals.addAll((await _list('goals')).map(FundGoal.fromJson));
+    if (goals.isEmpty && activeId == 'main') {
+      // bản cũ chỉ có một mục tiêu lưu ở khoá 'goal'
+      final g = await _kv?.get('${_k}goal');
+      if (g != null) {
+        try {
+          final fg = FundGoal.fromJson(Map<String, dynamic>.from(jsonDecode(g) as Map));
+          if (fg.target > 0 || fg.name.isNotEmpty) goals.add(fg);
+        } catch (_) {}
+      }
+    }
+    measurements.addAll((await _list('meas')).map(Measurement.fromJson));
+    final v = await _obj('vax');
+    if (v != null) {
+      v.forEach((k, e) => vax[k] = VaxRecord.fromJson(Map<String, dynamic>.from(e as Map)));
+    }
+    appts.addAll((await _list('appts')).map(Appointment.fromJson));
+    final ms = await _obj('miles');
+    if (ms != null) ms.forEach((k, e) => milestones[k] = dtFrom(e));
+    final mm = await _obj('memos');
+    if (mm != null) mm.forEach((k, e) => memos[k] = MilestoneMemo.fromJson(Map<String, dynamic>.from(e as Map)));
+    final th = await _obj('teeth');
+    if (th != null) th.forEach((k, e) => teeth[k] = dtFrom(e));
+    final fz = await _obj('fussy');
+    if (fz != null) fz.forEach((k, e) => fussyDays[k] = (e as num).toInt());
   }
 
   /// Nạp ảnh sau khi giao diện đã hiện (không chặn lúc mở app).
@@ -196,8 +254,10 @@ class AppState extends ChangeNotifier {
           v = jsonEncode(txs.map((e) => e.toJson()).toList());
         case 'funds':
           v = jsonEncode(funds.map((e) => e.toJson()).toList());
-        case 'goal':
-          v = jsonEncode(goal.toJson());
+        case 'goals':
+          v = jsonEncode(goals.map((e) => e.toJson()).toList());
+        case 'babies':
+          v = jsonEncode(babies.map((e) => e.toJson()).toList());
         case 'meas':
           v = jsonEncode(measurements.map((e) => e.toJson()).toList());
         case 'vax':
@@ -222,9 +282,9 @@ class AppState extends ChangeNotifier {
           v = jsonEncode(settings.toJson());
       }
       if (v == null) {
-        removes.add('$_k$k');
+        removes.add(_key(k));
       } else {
-        batch['$_k$k'] = v;
+        batch[_key(k)] = v;
       }
     }
     _writing = _writing.then((_) async {
@@ -269,6 +329,7 @@ class AppState extends ChangeNotifier {
         for (final m in memos.values)
           if (m.photo != null) m.photo!,
         if (settings.heroPhoto != null) settings.heroPhoto!,
+        if (baby?.photo != null) baby!.photo!,
       };
 
   // ---------- hồ sơ bé ----------
@@ -277,7 +338,61 @@ class AppState extends ChangeNotifier {
 
   void saveBaby(Baby b) {
     baby = b;
+    final r = babies.where((x) => x.id == activeId).firstOrNull;
+    if (r == null) {
+      babies.add(BabyRef(id: activeId, name: b.name, dob: b.dob, girl: b.sex == Sex.girl));
+    } else {
+      r
+        ..name = b.name
+        ..dob = b.dob
+        ..girl = b.sex == Sex.girl;
+    }
     changed('baby');
+    changed('babies');
+  }
+
+  /// Chuyển sang xem một bé khác (lưu bé hiện tại trước, rồi nạp dữ liệu bé kia).
+  Future<void> switchBaby(String id) async {
+    if (id == activeId || !babies.any((b) => b.id == id)) return;
+    await flushNow();
+    activeId = id;
+    await _kv?.set('${_k}active', id);
+    await _loadScoped();
+    notifyListeners();
+  }
+
+  /// Thêm một bé mới (dữ liệu riêng, trống) và chuyển sang xem bé đó.
+  Future<void> addBaby(Baby b) async {
+    await flushNow();
+    final id = uid();
+    babies.add(BabyRef(id: id, name: b.name, dob: b.dob, girl: b.sex == Sex.girl));
+    changed('babies');
+    await flushNow();
+    activeId = id;
+    await _kv?.set('${_k}active', id);
+    await _loadScoped();
+    saveBaby(b);
+  }
+
+  /// Xoá hẳn một bé và dữ liệu riêng của bé đó (không xoá được khi chỉ còn một bé).
+  Future<void> removeBaby(String id) async {
+    if (babies.length <= 1 || !babies.any((b) => b.id == id)) return;
+    await flushNow();
+    final kv = _kv;
+    if (kv != null) {
+      for (final k in _scoped) {
+        await kv.remove(_key(k, id));
+      }
+    }
+    babies.removeWhere((b) => b.id == id);
+    changed('babies');
+    await flushNow();
+    if (id == activeId) {
+      activeId = babies.first.id;
+      await kv?.set('${_k}active', activeId);
+      await _loadScoped();
+      notifyListeners();
+    }
   }
 
   double get weightKg {
@@ -314,6 +429,9 @@ class AppState extends ChangeNotifier {
     }
     entries.removeAt(i);
     changed('entries');
+    // xoá luôn ảnh đính kèm nếu không còn bản ghi nào dùng (không để ảnh mồ côi trong bộ nhớ)
+    final ph = e.data['photo'];
+    if (ph is String && !usedPhotoIds.contains(ph)) deletePhoto(ph);
   }
 
   Iterable<Entry> ofType(String type) => entries.where((e) => e.type == type);
@@ -537,18 +655,57 @@ class AppState extends ChangeNotifier {
   }
 
   void removeFund(String id) {
+    final gone = funds.where((f) => f.id == id).toList();
     funds.removeWhere((f) => f.id == id);
     changed('funds');
+    // xoá ảnh của khoản quỹ đã bị xoá (nếu không còn nơi nào dùng)
+    for (final f in gone) {
+      for (final p in f.photos) {
+        if (!usedPhotoIds.contains(p)) deletePhoto(p);
+      }
+    }
   }
 
   void fundChanged() => changed('funds');
 
   void setGoal(FundGoal g) {
-    goal = g;
-    changed('goal');
+    if (goals.isEmpty) {
+      goals.add(g);
+    } else {
+      goals[0] = g;
+    }
+    changed('goals');
+  }
+
+  void addGoal(FundGoal g) {
+    goals.add(g);
+    changed('goals');
+  }
+
+  void updateGoal(FundGoal g) {
+    final i = goals.indexWhere((x) => x.id == g.id);
+    if (i >= 0) goals[i] = g;
+    changed('goals');
+  }
+
+  void removeGoal(String id) {
+    goals.removeWhere((g) => g.id == id);
+    changed('goals');
   }
 
   // ---------- sức khoẻ ----------
+  /// Đặt cân nặng hiện tại: cập nhật lần cân hôm nay nếu có, không thì thêm một lần cân mới.
+  void setCurrentWeight(double kg) {
+    final now = DateTime.now();
+    final today = measurements.where((m) => m.weightKg != null && dayKey(m.date) == dayKey(now)).firstOrNull;
+    if (today != null) {
+      today.weightKg = kg;
+      changed('meas');
+    } else {
+      addMeasurement(Measurement(date: now, weightKg: kg));
+    }
+  }
+
   void addMeasurement(Measurement m) {
     measurements.add(m);
     measurements.sort((a, b) => b.date.compareTo(a.date));
@@ -664,9 +821,25 @@ class AppState extends ChangeNotifier {
   /// Xuất toàn bộ dữ liệu, **kèm ảnh** (base64) đang được dùng.
   Future<Map<String, dynamic>> exportAll({bool withPhotos = true}) async {
     final m = _exportData();
+    // các bé khác (dữ liệu riêng đọc thẳng từ kho)
+    final others = <Map<String, dynamic>>[];
+    final kv = _kv;
+    if (kv != null) {
+      for (final r in babies) {
+        if (r.id == activeId) continue;
+        final data = <String, dynamic>{};
+        for (final k in _scoped) {
+          final raw = await kv.get(_key(k, r.id));
+          if (raw != null) data[k] = jsonDecode(raw);
+        }
+        others.add({'id': r.id, 'n': r.name, 'data': data});
+      }
+    }
+    if (others.isNotEmpty) m['otherBabies'] = others;
     if (withPhotos) {
       final photos = <String, String>{};
-      for (final id in usedPhotoIds) {
+      // nhiều bé: ảnh của các bé khác nằm trong bộ nhớ ảnh chung nên xuất cả
+      for (final id in others.isEmpty ? usedPhotoIds : _photoCache.keys) {
         final b = _photoCache[id];
         if (b != null) photos[id] = base64Encode(b);
       }
@@ -687,6 +860,9 @@ class AppState extends ChangeNotifier {
         'tx': txs.map((e) => e.toJson()).toList(),
         'funds': funds.map((e) => e.toJson()).toList(),
         'goal': goal.toJson(),
+        'goals': goals.map((e) => e.toJson()).toList(),
+        'activeId': activeId,
+        'babies': babies.map((e) => e.toJson()).toList(),
         'meas': measurements.map((e) => e.toJson()).toList(),
         'vax': vax.map((k, e) => MapEntry(k, e.toJson())),
         'appts': appts.map((e) => e.toJson()).toList(),
@@ -702,7 +878,19 @@ class AppState extends ChangeNotifier {
   Future<void> importAll(Map<String, dynamic> j) async {
     if (j['app'] != 'GinBaby') throw const FormatException('Không phải tập sao lưu GinBaby');
     List<Map<String, dynamic>> l(String k) => ((j[k] as List?) ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    // khôi phục là thay thế toàn bộ: xoá dữ liệu mọi bé hiện có (trừ ảnh) rồi nạp từ tệp
+    final kv0 = _kv;
+    if (kv0 != null) {
+      for (final key in await kv0.keys(_k)) {
+        if (key != '${_k}migrated' && !key.startsWith('${_k}ph.')) await kv0.remove(key);
+      }
+    }
+    activeId = (j['activeId'] as String?) ?? 'main';
+    babies
+      ..clear()
+      ..addAll(l('babies').map(BabyRef.fromJson));
     baby = j['baby'] == null ? null : Baby.fromJson(Map<String, dynamic>.from(j['baby'] as Map));
+    if (baby != null && !babies.any((b) => b.id == activeId)) babies.add(BabyRef(id: activeId, name: baby!.name));
     entries
       ..clear()
       ..addAll(l('entries').map(Entry.fromJson));
@@ -719,7 +907,13 @@ class AppState extends ChangeNotifier {
     funds
       ..clear()
       ..addAll(l('funds').map(FundItem.fromJson));
-    if (j['goal'] != null) goal = FundGoal.fromJson(Map<String, dynamic>.from(j['goal'] as Map));
+    goals.clear();
+    if (j['goals'] != null) {
+      goals.addAll(l('goals').map(FundGoal.fromJson));
+    } else if (j['goal'] != null) {
+      final g = FundGoal.fromJson(Map<String, dynamic>.from(j['goal'] as Map));
+      if (g.target > 0 || g.name.isNotEmpty) goals.add(g);
+    }
     measurements
       ..clear()
       ..addAll(l('meas').map(Measurement.fromJson));
@@ -759,9 +953,25 @@ class AppState extends ChangeNotifier {
       });
       if (batch.isNotEmpty) await _kv?.setMany(batch);
     }
-    for (final k in ['baby', 'entries', 'fridge', 'tags', 'tx', 'funds', 'goal', 'meas', 'vax', 'appts', 'moods', 'epds', 'miles', 'memos', 'teeth', 'fussy', 'members', 'settings']) {
+    for (final k in ['baby', 'babies', 'entries', 'fridge', 'tags', 'tx', 'funds', 'goals', 'meas', 'vax', 'appts', 'moods', 'epds', 'miles', 'memos', 'teeth', 'fussy', 'members', 'settings']) {
       _dirty.add(k);
     }
+    // các bé khác trong tệp: ghi thẳng vào kho với khoá riêng
+    final others = j['otherBabies'];
+    if (others is List && _kv != null) {
+      final batch = <String, String>{};
+      for (final o in others) {
+        final m = Map<String, dynamic>.from(o as Map);
+        final id = '${m['id']}';
+        if (!babies.any((b) => b.id == id)) babies.add(BabyRef(id: id, name: (m['n'] as String?) ?? 'Bé'));
+        final data = Map<String, dynamic>.from((m['data'] as Map?) ?? const {});
+        data.forEach((k, v) {
+          if (_scoped.contains(k)) batch[_key(k, id)] = jsonEncode(v);
+        });
+      }
+      if (batch.isNotEmpty) await _kv!.setMany(batch);
+    }
+    await _kv?.set('${_k}active', activeId);
     _flush();
     notifyListeners();
   }
@@ -774,12 +984,14 @@ class AppState extends ChangeNotifier {
       }
     }
     baby = null;
+    babies.clear();
+    activeId = 'main';
+    goals.clear();
     entries.clear();
     fridge.clear();
     tags.clear();
     txs.clear();
     funds.clear();
-    goal = FundGoal();
     measurements.clear();
     vax.clear();
     appts.clear();

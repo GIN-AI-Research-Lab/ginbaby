@@ -309,10 +309,7 @@ class _MemoryEditScreenState extends State<MemoryEditScreen> {
                 ),
               ])
             else
-              AddPhotoButton(size: 96, onTap: () async {
-                final id = await pickAndStorePhoto(context);
-                if (id != null) setState(() => photo = id);
-              }),
+              AddPhotoButton(size: 96, onPicked: (id) => setState(() => photo = id)),
           ]),
         ),
         const SizedBox(height: 12),

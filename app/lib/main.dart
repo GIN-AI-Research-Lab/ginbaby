@@ -14,6 +14,7 @@ import 'core/update_banner.dart';
 import 'core/theme.dart';
 import 'data/app_state.dart';
 import 'ui/home.dart';
+import 'ui/quick_fab.dart';
 import 'ui/history.dart';
 import 'ui/money.dart';
 import 'ui/onboarding.dart';
@@ -39,26 +40,52 @@ class GinBabyApp extends StatefulWidget {
 }
 
 class _GinBabyAppState extends State<GinBabyApp> with WidgetsBindingObserver {
+  Timer? _nightTick;
+  final _navKey = GlobalKey<NavigatorState>();
+  bool? _autoDark; // giá trị tối/sáng đã áp dụng ở chế độ Theo giờ
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Chế độ "Theo giờ": kiểm tra mỗi 30 giây để đổi đúng lúc khi đang mở app.
+    _nightTick = Timer.periodic(const Duration(seconds: 30), (_) => _recheckNight());
   }
 
   @override
   void dispose() {
+    _nightTick?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
+  void _recheckNight() {
+    // _dark tự hoãn việc đổi khi mẹ đang ở trong một màn con (xem bên dưới)
+    if (mounted && app.settings.themeMode == 3 && GB.dark != _dark) setState(() {});
+  }
+
   @override
   void didChangePlatformBrightness() => setState(() {});
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _recheckNight(); // mở lại app sau khi tắt màn hình qua đêm
+  }
 
   /// Chế độ tối: theo cài đặt của mẹ, hoặc theo hệ thống.
   bool get _dark {
     final m = app.settings.themeMode;
     if (m == 1) return false;
     if (m == 2) return true;
+    if (m == 3) {
+      // Đổi sáng/tối dựng lại cả cây giao diện và đưa về Trang chủ, nên đang ở trong màn con
+      // (nhập dở, hộp thoại, đồng hồ hút sữa...) thì hoãn tới khi mẹ quay về màn chính.
+      final want = app.settings.isNight(DateTime.now());
+      final inSubScreen = _navKey.currentState?.canPop() ?? false;
+      if (_autoDark == null || !inSubScreen) _autoDark = want;
+      return _autoDark!;
+    }
+    _autoDark = null;
     return WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
   }
 
@@ -81,6 +108,7 @@ class _GinBabyAppState extends State<GinBabyApp> with WidgetsBindingObserver {
     return MaterialApp(
         title: 'GinBaby',
         scaffoldMessengerKey: messengerKey,
+        navigatorKey: _navKey,
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
@@ -207,6 +235,8 @@ class _ShellState extends State<Shell> {
               child: KeyedSubtree(key: ValueKey(tab), child: pages[tab]),
             ),
             Positioned(left: 0, right: 0, bottom: 0, child: _TabBar(index: tab, goTab: _go)),
+            // nút ghi nhanh nổi ở góc dưới phải, ngay trên thanh dưới
+            Positioned(right: 16, bottom: (MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom : 8) + 4 + 62 + 10, child: const QuickAddButton()),
           ],
         ),
       ),

@@ -23,9 +23,9 @@ class _EasyScreenState extends State<EasyScreen> {
         final s = app.settings;
         final age = app.age.adjDays;
         final cycle = Easy.cycleFor(s, age);
-        final sp = Easy.split(cycle, age);
-        final ww = Easy.wakeWindow(age);
-        final naps = Easy.napsPerDay(age);
+        final ww = Easy.wakeFor(s, age);
+        final sp = Easy.split(cycle, age, wake: ww);
+        final napCount = Easy.napsFor(cycle);
         final sh = Easy.sleepHours(age);
 
         // lịch gợi ý từ giờ bé dậy sáng nay (hoặc bây giờ)
@@ -34,8 +34,8 @@ class _EasyScreenState extends State<EasyScreen> {
         final start = morning.isNotEmpty ? morning.first.end! : DateTime(today.year, today.month, today.day, 7);
         final plan = <(DateTime, String, IconData, Color)>[];
         var t = start;
-        final napLen = age < 90 ? 75 : age < 180 ? 90 : 90;
-        final n = naps.hi.round();
+        final napLen = sp.sleep; // độ dài giấc ngủ ngày theo nhịp đã chọn
+        final n = napCount;
         for (var i = 0; i < n; i++) {
           plan.add((t, 'Dậy và ăn (E)', Icons.local_drink_rounded, GB.feed));
           plan.add((t.add(Duration(minutes: sp.eat)), 'Chơi (A)', Icons.toys_rounded, GB.diaper));
@@ -73,7 +73,7 @@ class _EasyScreenState extends State<EasyScreen> {
             Row(children: [
               Expanded(child: _fact('Thức mỗi lần', ww.text('p'), Icons.wb_sunny_rounded)),
               const SizedBox(width: 10),
-              Expanded(child: _fact('Ngủ ngày', '${naps.lo.round()}–${naps.hi.round()} cữ', Icons.bedtime_rounded)),
+              Expanded(child: _fact('Ngủ ngày', '$napCount cữ', Icons.bedtime_rounded)),
               const SizedBox(width: 10),
               Expanded(child: _fact('Tổng ngủ', sh.text('h'), Icons.nights_stay_rounded)),
             ]),

@@ -9,7 +9,7 @@ import '../core/theme.dart';
 import '../data/app_state.dart';
 import '../domain/age.dart';
 import '../domain/stats.dart';
-import 'bottle.dart';
+import 'baby_profile.dart';
 
 /// Thẻ tổng kết tuần để chia sẻ (xuất ảnh PNG).
 class RecapScreen extends StatefulWidget {
@@ -69,7 +69,9 @@ class _RecapScreenState extends State<RecapScreen> {
     final baby = app.baby!;
     final name = hideName ? 'bé' : baby.name;
     final end = widget.weekStart.add(const Duration(days: 6));
-    final bottles = (milkTotal / 150).round();
+    final pumpTotal = cur.fold(0, (a, d) => a + d.pumpMl);
+    final feedCnt = cur.fold(0, (a, d) => a + d.feedCount);
+    final pumpCnt = cur.fold(0, (a, d) => a + d.pumpCount);
     const wd = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
     final maxS = math.max(14.0, maxOf(cur.map((d) => d.sleepHours)));
 
@@ -91,70 +93,74 @@ class _RecapScreenState extends State<RecapScreen> {
                   Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5), decoration: BoxDecoration(color: t.card, borderRadius: BorderRadius.circular(14)), child: Text('${GB.dmy(widget.weekStart)} – ${GB.dmy(end)}', style: GB.body(12.5, w: FontWeight.w700, color: t.fg))),
                 ]),
                 const SizedBox(height: 14),
-                Text('Tuần của', style: GB.body(15, w: FontWeight.w600, color: t.fg)),
-                Text(name, style: GB.display(46, color: t.fg)),
-                if (!hideName) Text(Age(baby, end).label.split(' ').take(2).join(' ') == '' ? '' : 'bé ${Age(baby, end).short}', style: GB.body(13, color: t.muted)),
-                const SizedBox(height: 14),
-                if (showNumbers) ...[
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: t.card, borderRadius: BorderRadius.circular(24)),
+                Row(children: [
+                  Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Row(children: [
-                        Icon(Icons.bedtime_rounded, size: 18, color: t.fg == Colors.white ? const Color(0xFFD4D8F5) : const Color(0xFF3F4A8A)),
-                        const SizedBox(width: 6),
-                        Text('Giấc ngủ', style: GB.body(13, w: FontWeight.w700, color: t.muted)),
-                      ]),
-                      Text(GB.dur(Duration(minutes: (sleepAvg * 60).round())), style: GB.display(40, color: t.fg)),
-                      Text('mỗi ngày', style: GB.body(12.5, color: t.muted)),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        height: 64,
-                        child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          for (var i = 0; i < 7; i++)
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 3),
-                                child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-                                  Container(height: math.max(3, cur[i].sleepHours / maxS * 38), decoration: BoxDecoration(color: const Color(0xFF8FB08B), borderRadius: BorderRadius.circular(5))),
-                                  const SizedBox(height: 3),
-                                  Text(wd[i], style: GB.body(9.5, color: t.muted)),
-                                ]),
-                              ),
-                            ),
-                        ]),
-                      ),
+                      Text('Tuần của', style: GB.body(14, w: FontWeight.w600, color: t.fg)),
+                      FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(name, style: GB.display(38, color: t.fg))),
+                      if (!hideName) Text('bé ${Age(baby, end).short}', style: GB.body(12.5, color: t.muted)),
                     ]),
                   ),
-                  const SizedBox(height: 10),
+                  if (!hideName) ...[const SizedBox(width: 10), const BabyAvatar(size: 58)],
+                ]),
+                const SizedBox(height: 12),
+                if (showNumbers) ...[
+                  // thẻ giấc ngủ: số giờ trung bình + biểu đồ 7 ngày gọn
                   Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: t.card, borderRadius: BorderRadius.circular(24)),
-                    child: Row(children: [
-                      SizedBox(
-                        width: 70,
-                        height: 100,
-                        child: FittedBox(child: SizedBox(width: 120, height: 170, child: BottleView(ml: 190, cap: 240, width: 120, interactive: false, dark: false, color: const Color(0xFFF3DDAE), onChanged: (_) {}))),
-                      ),
-                      const SizedBox(width: 14),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+                    decoration: BoxDecoration(color: t.card, borderRadius: BorderRadius.circular(22)),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
                       Expanded(
+                        flex: 5,
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('Sữa bé nhận', style: GB.body(13, w: FontWeight.w700, color: t.muted)),
-                          Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-                            Text(GB.num1(milkTotal / 1000), style: GB.display(40, color: t.fg)),
-                            const SizedBox(width: 4),
-                            Text('lít', style: GB.body(15, w: FontWeight.w700, color: t.muted)),
+                          Row(children: [
+                            Icon(Icons.bedtime_rounded, size: 16, color: t.fg == Colors.white ? const Color(0xFFD4D8F5) : const Color(0xFF3F4A8A)),
+                            const SizedBox(width: 6),
+                            Expanded(child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('Ngủ mỗi ngày', style: GB.body(12, w: FontWeight.w700, color: t.muted)))),
                           ]),
-                          Text('≈ $bottles bình 150ml', style: GB.body(12.5, color: t.muted)),
+                          const SizedBox(height: 2),
+                          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(GB.dur(Duration(minutes: (sleepAvg * 60).round())), style: GB.display(32, color: t.fg))),
                         ]),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 6,
+                        child: SizedBox(
+                          height: 74,
+                          child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                            for (var i = 0; i < 7; i++)
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                                  child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
+                                    Container(height: math.max(3, cur[i].sleepHours / maxS * 40), decoration: BoxDecoration(color: const Color(0xFF8FB08B), borderRadius: BorderRadius.circular(4))),
+                                    const SizedBox(height: 3),
+                                    Text(wd[i], style: GB.body(9, color: t.muted)),
+                                  ]),
+                                ),
+                              ),
+                          ]),
+                        ),
                       ),
                     ]),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Row(children: [
-                    Expanded(child: _small(t, 'Tã cả tuần', '$diapers lần', Icons.water_drop_rounded)),
-                    const SizedBox(width: 10),
-                    Expanded(child: _small(t, 'Giấc ngủ dài nhất', GB.dur(longest), Icons.nights_stay_rounded)),
+                    Expanded(child: _stat(t, Icons.local_drink_rounded, 'Sữa đã bú', GB.num1(milkTotal / 1000), 'lít', const Color(0xFF7B68C4))),
+                    const SizedBox(width: 8),
+                    Expanded(child: _stat(t, Icons.water_drop_rounded, 'Sữa hút được', GB.num1(pumpTotal / 1000), 'lít', const Color(0xFFE58F96))),
+                  ]),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    Expanded(child: _stat(t, Icons.restaurant_rounded, 'Số cữ bú', '$feedCnt', 'cữ', const Color(0xFFE9A15F))),
+                    const SizedBox(width: 8),
+                    Expanded(child: _stat(t, Icons.baby_changing_station_rounded, 'Tã cả tuần', '$diapers', 'lần', const Color(0xFFD9A441))),
+                  ]),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    Expanded(child: _stat(t, Icons.nights_stay_rounded, 'Ngủ dài nhất', GB.dur(longest), '', const Color(0xFF6E8FD6))),
+                    const SizedBox(width: 8),
+                    Expanded(child: _stat(t, Icons.favorite_rounded, 'Số cữ hút', '$pumpCnt', 'cữ', const Color(0xFFE58F96))),
                   ]),
                 ],
                 if (hl.isNotEmpty) ...[
@@ -202,6 +208,29 @@ class _RecapScreenState extends State<RecapScreen> {
       ],
     );
   }
+
+  /// Ô số liệu nhỏ: biểu tượng màu trong vòng tròn, số lớn, nhãn bên dưới.
+  Widget _stat(_Theme t, IconData icon, String label, String value, String unit, Color c) => Container(
+        padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+        decoration: BoxDecoration(color: t.card, borderRadius: BorderRadius.circular(20)),
+        child: Row(children: [
+          Container(width: 34, height: 34, decoration: BoxDecoration(color: c.withValues(alpha: .20), shape: BoxShape.circle), child: Icon(icon, size: 19, color: c)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, mainAxisSize: MainAxisSize.min, children: [
+                  Text(value, style: GB.display(24, color: t.fg)),
+                  if (unit.isNotEmpty) ...[const SizedBox(width: 3), Text(unit, style: GB.body(12, w: FontWeight.w700, color: t.muted))],
+                ]),
+              ),
+              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: GB.body(11, w: FontWeight.w600, color: t.muted)),
+            ]),
+          ),
+        ]),
+      );
 
   Widget _small(_Theme t, String label, String v, IconData icon) => Container(
         padding: const EdgeInsets.all(14),

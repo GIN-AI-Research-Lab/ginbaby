@@ -180,7 +180,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
     final s = AppState.dayStart(anchor);
     final e = s.add(const Duration(days: 1));
     final sl = app.entries.where((x) => x.type == T.sleep && x.end != null && !x.time.isBefore(s.subtract(const Duration(hours: 6))) && x.time.isBefore(e)).toList()..sort((a, b) => a.time.compareTo(b.time));
-    final ww = Easy.wakeWindow(age);
+    final ww = Easy.wakeFor(app.settings, age);
     final rows = <Widget>[];
     for (var i = 0; i + 1 < sl.length; i++) {
       final from = sl[i].end!;
@@ -485,17 +485,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
     final pumpPrev = prev.fold(0, (a, d) => a + d.pumpMl);
     final milkSum = cur.fold(0, (a, d) => a + d.milk);
     final milkPrevSum = prev.fold(0, (a, d) => a + d.milk);
-    final usePump = pumpSum > 0 || pumpPrev > 0;
-    final main = usePump ? pumpSum : milkSum;
-    final mainPrev = usePump ? pumpPrev : milkPrevSum;
-    final dMain = pctDelta(main, mainPrev);
-    final bmSum = cur.fold(0, (a, d) => a + d.breastMin);
-    final bmCnt = cur.fold(0, (a, d) => a + d.breastCount);
-    final bmPrevSum = prev.fold(0, (a, d) => a + d.breastMin);
-    final bmPrevCnt = prev.fold(0, (a, d) => a + d.breastCount);
-    final bmAvg = bmCnt == 0 ? 0 : (bmSum / bmCnt).round();
-    final bmPrevAvg = bmPrevCnt == 0 ? 0 : bmPrevSum / bmPrevCnt;
-    final dBm = pctDelta(bmAvg, bmPrevAvg);
+    final dPump = pctDelta(pumpSum, pumpPrev);
+    final dMilk = pctDelta(milkSum, milkPrevSum);
     final cnt = cur.fold(0, (a, d) => a + d.feedCount);
     final cntPrev = prev.fold(0, (a, d) => a + d.feedCount);
     final dCnt = cnt - cntPrev;
@@ -515,9 +506,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
     return Column(children: [
       IntrinsicHeight(
         child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Expanded(child: tile(GB.pumpTile, Icon(Icons.water_drop_rounded, color: GB.pumpDeep, size: 26), usePump ? 'Tổng sữa hút' : 'Tổng sữa uống', GB.thousands(main), 'ml', dMain == null ? null : DeltaChip(dMain.text, up: dMain.up, hint: 'so với tuần trước'))),
+          Expanded(child: tile(GB.pumpTile, Icon(Icons.water_drop_rounded, color: GB.pumpDeep, size: 26), 'Tổng sữa hút', GB.thousands(pumpSum), 'ml', dPump == null ? null : DeltaChip(dPump.text, up: dPump.up, hint: 'so với tuần trước'))),
           const SizedBox(width: 10),
-          Expanded(child: tile(GB.breastTile, Icon(Icons.timer_outlined, color: GB.breastDeep, size: 26), 'Thời gian bú TB', '$bmAvg', 'phút', dBm == null ? null : DeltaChip(dBm.text, up: dBm.up, hint: 'so với tuần trước'))),
+          Expanded(child: tile(GB.breastTile, Icon(Icons.local_drink_rounded, color: GB.breastDeep, size: 26), 'Tổng sữa đã bú', GB.thousands(milkSum), 'ml', dMilk == null ? null : DeltaChip(dMilk.text, up: dMilk.up, hint: 'so với tuần trước'))),
         ]),
       ),
       const SizedBox(height: 10),

@@ -10,7 +10,8 @@ import 'quick_logs.dart';
 import 'widgets.dart';
 
 /// Màu, kết cấu và lượng phân kèm tranh minh hoạ (assets/art).
-final kPoopColors = <(String label, String art, Color dot)>[
+/// Là hàm lấy giá trị (không phải biến cố định) để màu đổi theo chế độ sáng/tối ngay khi chuyển.
+List<(String label, String art, Color dot)> get kPoopColors => [
   ('Vàng', 'poop_yellow', Color(0xFFE3B93C)),
   ('Vàng nâu', 'poop_mustard', Color(0xFFC9972B)),
   ('Xanh rêu', 'poop_green', Color(0xFF6E8F3A)),
@@ -222,10 +223,7 @@ class _DiaperScreenState extends State<DiaperScreen> {
               Row(children: [
                 Text('Ảnh', style: GB.body(14, w: FontWeight.w700)),
                 const SizedBox(width: 12),
-                if (photo != null) PhotoThumb(photo!, onRemove: () => setState(() => photo = null)) else AddPhotoButton(onTap: () async {
-                      final id = await pickAndStorePhoto(context);
-                      if (id != null) setState(() => photo = id);
-                    }),
+                if (photo != null) PhotoThumb(photo!, onRemove: () => setState(() => photo = null)) else AddPhotoButton(onPicked: (id) => setState(() => photo = id)),
                 const SizedBox(width: 12),
                 Expanded(child: Text('Ảnh chỉ lưu trên máy', style: TextStyle(fontSize: 12, color: GB.inkMuted))),
               ]),
@@ -237,6 +235,7 @@ class _DiaperScreenState extends State<DiaperScreen> {
             const SizedBox(height: 4),
             Center(
               child: TextButton(
+                style: TextButton.styleFrom(minimumSize: const Size(0, 48)),
                 onPressed: _saveWetOnly,
                 child: Text('Chỉ có tã ướt, không có phân', style: GB.body(13, w: FontWeight.w700, color: GB.accentDeep)),
               ),

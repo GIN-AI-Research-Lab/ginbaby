@@ -19,8 +19,10 @@ class Baby {
     this.birthLengthCm,
     this.gestWeeks = 40,
     this.mode = FeedMode.mixed,
+    this.photo,
   });
 
+  String? photo; // ảnh đại diện (id ảnh trong kho ảnh)
   String name;
   Sex sex;
   DateTime dob;
@@ -37,6 +39,7 @@ class Baby {
         'bl': birthLengthCm,
         'gest': gestWeeks,
         'mode': mode.index,
+        if (photo != null) 'ph': photo,
       };
 
   static Baby fromJson(Map<String, dynamic> j) => Baby(
@@ -47,6 +50,7 @@ class Baby {
         birthLengthCm: (j['bl'] as num?)?.toDouble(),
         gestWeeks: (j['gest'] as num?)?.toInt() ?? 40,
         mode: FeedMode.values[(j['mode'] as num?)?.toInt() ?? 2],
+        photo: j['ph'] as String?,
       );
 }
 
@@ -277,11 +281,23 @@ class FundMove {
 }
 
 class FundGoal {
-  FundGoal({this.name = '', this.target = 0});
+  FundGoal({String? id, this.name = '', this.target = 0}) : id = id ?? uid();
+  final String id;
   String name;
   int target;
-  Map<String, dynamic> toJson() => {'n': name, 't': target};
-  static FundGoal fromJson(Map<String, dynamic> j) => FundGoal(name: (j['n'] as String?) ?? '', target: (j['t'] as num?)?.toInt() ?? 0);
+  Map<String, dynamic> toJson() => {'id': id, 'n': name, 't': target};
+  static FundGoal fromJson(Map<String, dynamic> j) => FundGoal(id: j['id'] as String?, name: (j['n'] as String?) ?? '', target: (j['t'] as num?)?.toInt() ?? 0);
+}
+
+/// Tham chiếu tới một bé trong danh sách nhiều bé (dữ liệu từng bé lưu riêng).
+class BabyRef {
+  BabyRef({required this.id, required this.name, this.dob, this.girl = true});
+  final String id;
+  String name;
+  DateTime? dob;
+  bool girl;
+  Map<String, dynamic> toJson() => {'id': id, 'n': name, if (dob != null) 'd': msOf(dob!), 'g': girl};
+  static BabyRef fromJson(Map<String, dynamic> j) => BabyRef(id: '${j['id']}', name: (j['n'] as String?) ?? 'Bé', dob: j['d'] == null ? null : dtFrom(j['d']), girl: j['g'] != false);
 }
 
 class Measurement {
@@ -375,10 +391,19 @@ class Settings {
   DateTime? breastEnd; // giờ kết thúc bú mẹ chưa lưu
   String breastSide = 'L';
   String ownerName = 'Mẹ';
-  int themeMode = 0; // 0 theo máy, 1 sáng, 2 tối
+  int themeMode = 0; // 0 theo máy, 1 sáng, 2 tối, 3 tự đổi theo giờ
+  int darkFrom = 20; // chế độ theo giờ: bật giao diện tối từ giờ này (0-23)
+  int darkTo = 6; // và trở lại sáng lúc giờ này
+
+  /// Giờ [now] có nằm trong khung giờ tối đã đặt không (khung có thể qua nửa đêm, vd. 20h đến 6h).
+  bool isNight(DateTime now) {
+    if (darkFrom == darkTo) return false;
+    final h = now.hour;
+    return darkFrom < darkTo ? (h >= darkFrom && h < darkTo) : (h >= darkFrom || h < darkTo);
+  }
   int glassMode = 0; // kính mờ: 0 tắt, 1 nhẹ (thanh dưới, popup), 2 đầy đủ (cả thẻ)
   List<String> footer = ['history', 'stats', 'money']; // ba nút giữa của thanh dưới (mã chức năng)
-  List<String> favs = ['pump', 'breast', 'bottle', 'sleep']; // mục ghim nhanh ở tab Tiện ích
+  List<String> favs = ['pump', 'feed', 'sleep', 'diaper']; // mục ghim nhanh ở tab Tiện ích
   int feedRemindHours = 0; // nhắc cữ bú sau X giờ kể từ cữ trước (0 = tắt)
   bool notify = false; // bật thông báo của trình duyệt
   List<String> notified = []; // các nhắc nhở đã báo (tránh báo lặp)
@@ -405,6 +430,8 @@ class Settings {
         'nf': notify,
         'fr': feedRemindHours,
         'tm': themeMode,
+        'df': darkFrom,
+        'dt': darkTo,
         'gm': glassMode,
         'ft': footer,
         'fv': favs,
@@ -425,17 +452,27 @@ class Settings {
     s.remind = j['rem'] != false;
     s.breastStart = j['bs'] == null ? null : dtFrom(j['bs']);
     s.breastEnd = j['be'] == null ? null : dtFrom(j['be']);
-    s.breastSide = (j['bside'] as String?) ?? 'L';
+    s.breastSide = (j['bside'] as String?) == 'R' ? 'R' : 'L'; // bỏ lựa chọn "hai bên": dữ liệu cũ về bên trái
     s.ownerName = (j['owner'] as String?) ?? 'Mẹ';
     s.heroPhoto = j['hp'] as String?;
     s.notify = j['nf'] == true;
     s.feedRemindHours = (j['fr'] as num?)?.toInt() ?? 0;
     s.themeMode = (j['tm'] as num?)?.toInt() ?? 0;
+    s.darkFrom = ((j['df'] as num?)?.toInt() ?? 20).clamp(0, 23);
+    s.darkTo = ((j['dt'] as num?)?.toInt() ?? 6).clamp(0, 23);
     s.glassMode = (j['gm'] as num?)?.toInt() ?? 0;
     final ft = (j['ft'] as List?)?.map((e) => '$e').toList();
     if (ft != null && ft.length == 3) s.footer = ft;
     final fv = (j['fv'] as List?)?.map((e) => '$e').toList();
-    if (fv != null) s.favs = fv;
+    if (fv != null) {
+      // "Cho bú" và "Bình sữa" đã gộp thành "Ghi bú"; "Sức khoẻ" (mục gộp) đã bỏ: đổi mã cũ và bỏ trùng.
+      final out = <String>[];
+      for (final id in fv) {
+        final n = (id == 'breast' || id == 'bottle') ? 'feed' : id;
+        if (n != 'health' && !out.contains(n)) out.add(n);
+      }
+      s.favs = out;
+    }
     s.notified = List<String>.from(j['nt'] as List? ?? const []);
     s.monthlyBudget = (j['mb'] as num?)?.toInt() ?? 0;
     return s;

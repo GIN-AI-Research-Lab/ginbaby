@@ -6,11 +6,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/app_state.dart';
+import '../ui/hero_photo.dart';
 import 'art_catalog.dart';
 import 'pastel.dart';
 import 'theme.dart';
 
 /// Hiệu ứng chạm kiểu iOS: nhấn xuống thì co nhẹ và mờ đi, thả ra thì bật lại mềm (lò xo), kèm rung nhẹ trên điện thoại.
+/// Nới vùng chạm của [child] lên tối thiểu [min] x [min] điểm (chuẩn 44 của Apple) mà không đổi hình dáng nhìn thấy.
+Widget minHit(Widget child, {double min = 44}) => ConstrainedBox(
+      constraints: BoxConstraints(minWidth: min, minHeight: min),
+      child: Align(widthFactor: 1, heightFactor: 1, child: child),
+    );
+
+
 class Pressable extends StatefulWidget {
   const Pressable({super.key, required this.child, this.onTap, this.onLongPress, this.scale = .95, this.dim = .78, this.haptic = true, this.behavior = HitTestBehavior.opaque});
   final Widget child;
@@ -96,11 +104,12 @@ class ThemeToggle extends StatelessWidget {
       label: dark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối',
       child: Pressable(
         scale: .88,
+        behavior: HitTestBehavior.opaque, // nhận chạm cả vùng 44x44, không chỉ trong hình tròn
         onTap: () {
           app.settings.themeMode = dark ? 1 : 2;
           app.settingsChanged();
         },
-        child: Container(
+        child: minHit(Container(
           width: size,
           height: size,
           decoration: BoxDecoration(
@@ -110,7 +119,7 @@ class ThemeToggle extends StatelessWidget {
             boxShadow: [BoxShadow(color: const Color(0xFFC98C84).withValues(alpha: dark ? .10 : .20), blurRadius: 10, offset: const Offset(0, 3))],
           ),
           child: Icon(dark ? Icons.wb_sunny_rounded : Icons.nightlight_round, size: size * .52, color: dark ? const Color(0xFFF2C46B) : const Color(0xFF7C6FC0)),
-        ),
+        )),
       ),
     );
   }
@@ -129,19 +138,32 @@ class Art extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final darkArt = GB.dark && ArtCatalog.hasDark(name);
-    final dpr = math.min(MediaQuery.maybeDevicePixelRatioOf(context) ?? 2, 2.0);
-    final img = Image.asset(
-      darkArt ? 'assets/art_dark/$name.png' : 'assets/art/$name.png',
-      width: width,
-      height: height,
-      cacheWidth: width != null ? (width! * dpr).ceil() : null,
-      cacheHeight: width == null && height != null ? (height! * dpr).ceil() : null,
-      fit: fit,
-      alignment: alignment,
-      filterQuality: FilterQuality.medium,
-      excludeFromSemantics: true,
-      errorBuilder: (_, __, ___) => SizedBox(width: width, height: height),
-    );
+    final isHero = name.startsWith('hero_');
+    // Icon nhỏ dùng bản 192 px đã thu nhỏ sẵn bằng Lanczos: thu nhỏ trực tiếp từ ảnh lớn trên web bị răng cưa.
+    Widget build(bool small) => Image.asset(
+          '${small ? (darkArt ? 'assets/art_dark_s' : 'assets/art_s') : (darkArt ? 'assets/art_dark' : 'assets/art')}/$name.png',
+          width: width,
+          height: height,
+          fit: fit,
+          alignment: alignment,
+          filterQuality: FilterQuality.medium,
+          excludeFromSemantics: true,
+          errorBuilder: (_, __, ___) => SizedBox(width: width, height: height),
+        );
+    Widget img;
+    final known = math.min(width ?? double.infinity, height ?? double.infinity);
+    if (isHero) {
+      img = build(false);
+    } else if (known.isFinite) {
+      img = build(known <= 72);
+    } else {
+      img = LayoutBuilder(builder: (context, c) {
+        final w = width ?? (c.hasBoundedWidth ? c.maxWidth : double.infinity);
+        final h = height ?? (c.hasBoundedHeight ? c.maxHeight : double.infinity);
+        final s = math.min(w, h);
+        return build(s.isFinite && s <= 72);
+      });
+    }
     if (!GB.dark || !plate || darkArt) return img;
     // Tranh chưa có bản tối (tệp mới thêm): đặt một quầng kem mờ phía sau để màu không bị rối.
     return DecoratedBox(
@@ -196,6 +218,7 @@ class GlassCard extends StatelessWidget {
     this.blur = 20,
     this.tint,
     this.onTap,
+    this.onLongPress,
     this.shadow = true,
     this.forceBlur = false,
   });
@@ -207,6 +230,7 @@ class GlassCard extends StatelessWidget {
   final double blur;
   final Color? tint;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress; // giữ để làm thao tác nhanh
   final bool shadow;
   final bool forceBlur; // luôn làm mờ nền phía sau (popup), kể cả khi thẻ thường không làm mờ
 
@@ -241,7 +265,7 @@ class GlassCard extends StatelessWidget {
       child: glass && (GB.glassCards || forceBlur) ? ClipRRect(borderRadius: br, child: BackdropFilter(filter: ImageFilter.blur(sigmaX: blur * .7, sigmaY: blur * .7), child: inner)) : inner,
     );
     if (onTap != null) {
-      card = Pressable(scale: .985, dim: .88, onTap: onTap, child: card);
+      card = Pressable(scale: .985, dim: .88, onTap: onTap, onLongPress: onLongPress, child: card);
     }
     return card;
   }
@@ -257,9 +281,10 @@ class Seg extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final h = height < 44 ? 44.0 : height; // vùng chạm tối thiểu 44
     return GlassCard(
-      radius: height / 2 + 2,
-      padding: const EdgeInsets.all(4),
+      radius: h / 2,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       blur: 14,
       child: Row(children: [
         for (var i = 0; i < labels.length; i++)
@@ -268,16 +293,22 @@ class Seg extends StatelessWidget {
               scale: .94,
               dim: .8,
               onTap: () => onChanged(i),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                height: height - 8,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(color: i == index ? GB.accent : Colors.transparent, borderRadius: BorderRadius.circular((height - 8) / 2)),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(labels[i], maxLines: 1, style: GB.body(13.5, w: i == index ? FontWeight.w800 : FontWeight.w600, color: i == index ? Colors.white : GB.inkMuted)),
+              behavior: HitTestBehavior.opaque, // vùng chạm phủ cả chiều cao của thanh
+              child: SizedBox(
+                height: h,
+                child: Center(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    height: h - 8,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(color: i == index ? GB.accent : Colors.transparent, borderRadius: BorderRadius.circular((h - 8) / 2)),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(labels[i], maxLines: 1, style: GB.body(13.5, w: i == index ? FontWeight.w800 : FontWeight.w600, color: i == index ? Colors.white : GB.inkMuted)),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -310,7 +341,7 @@ class PillChip extends StatelessWidget {
       child: Pressable(
         scale: .93,
         onTap: onTap,
-        child: Container(
+        child: minHit(Container(
           height: height,
           padding: EdgeInsets.symmetric(horizontal: hPad),
           decoration: BoxDecoration(
@@ -326,7 +357,7 @@ class PillChip extends StatelessWidget {
               Text(label, style: GB.body(13.5, w: on ? FontWeight.w800 : FontWeight.w600, color: on ? (color == null ? Colors.white : GB.ink) : GB.ink)),
             ]),
           ),
-        ),
+        )),
       ),
     );
   }
@@ -347,7 +378,8 @@ class BigButton extends StatelessWidget {
     final on = enabled && onTap != null;
     // Nút chính (hồng san hô) luôn chữ trắng cho dễ đọc.
     final color = this.color ?? GB.accent;
-    final fg = color == GB.accent ? Colors.white : (this.fg ?? Colors.white);
+    // Nền nhạt (vd. nút Ngủ màu bạc hà ở chế độ tối) dùng chữ tối để đủ tương phản.
+    final fg = color == GB.accent ? Colors.white : (this.fg ?? (color.a > .95 && color.computeLuminance() > .55 ? const Color(0xFF2A2433) : Colors.white));
     return Semantics(
       button: true,
       enabled: on,
@@ -395,7 +427,7 @@ class RoundIconButton extends StatelessWidget {
       child: Pressable(
         scale: .9,
         onTap: onTap,
-        child: Container(
+        child: minHit(Container(
           width: size,
           height: size,
           decoration: BoxDecoration(
@@ -405,7 +437,7 @@ class RoundIconButton extends StatelessWidget {
             boxShadow: filled ? null : [BoxShadow(color: const Color(0xFFC98C84).withValues(alpha: GB.dark ? .10 : .18), blurRadius: 10, offset: const Offset(0, 3))],
           ),
           child: Icon(icon, size: size * .46, color: filled ? Colors.white : (iconColor ?? GB.ink)),
-        ),
+        )),
       ),
     );
   }
@@ -577,12 +609,12 @@ class BackHeader extends StatelessWidget {
       child: Semantics(
         button: true,
         label: 'Quay lại',
-        child: Container(
+        child: minHit(Container(
           width: 40,
           height: 40,
           decoration: BoxDecoration(color: GB.accentSoft, shape: BoxShape.circle),
           child: Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: GB.title),
-        ),
+        )),
       ),
     );
     final texts = Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -599,12 +631,13 @@ class BackHeader extends StatelessWidget {
     if (art == null) {
       return Row(children: [back, const SizedBox(width: 12), Expanded(child: texts), ...actions]);
     }
+    // Mọi màn có hình đầu trang dùng chung một ảnh tròn cùng cỡ (ảnh mặc định, hoặc ảnh mẹ đã chọn ở Hồ sơ).
     return SizedBox(
-      height: artWidth <= 120 ? 112 : 148,
+      height: 112,
       child: Stack(children: [
-        Positioned(right: -6, top: 0, bottom: 0, child: Art(art!, width: artWidth, alignment: Alignment.topRight, fit: BoxFit.contain)),
+        const Positioned(right: 0, top: 4, child: HeroPhoto()),
         Positioned(left: 0, top: 0, child: back),
-        Positioned(left: 0, right: artWidth - 10, bottom: 14, child: texts),
+        Positioned(left: 0, right: 118, bottom: 14, child: texts),
         if (actions.isNotEmpty) Positioned(right: 0, top: 0, child: Row(children: actions)),
       ]),
     );
@@ -670,6 +703,8 @@ List<Widget> pairRows(List<Widget> items, {double gap = 10}) {
 }
 
 Future<T?> openPage<T>(BuildContext context, Widget page) {
+  // Thông báo (kèm Hoàn tác) của màn trước không được nằm đè lên màn mới: chạm nhầm sẽ hoàn tác ngoài ý muốn.
+  ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
   return Navigator.of(context).push<T>(CupertinoPageRoute<T>(builder: (_) => page));
 }
 
@@ -758,7 +793,8 @@ void toast(BuildContext context, String msg, {VoidCallback? undo}) {
       behavior: SnackBarBehavior.floating,
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 100),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      duration: Duration(seconds: undo == null ? 2 : 5),
+      persist: false, // có nút Hoàn tác thì mặc định snackbar không tự tắt
+      duration: Duration(seconds: undo == null ? 2 : 4),
     ));
 }
 

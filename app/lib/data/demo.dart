@@ -97,9 +97,11 @@ Future<void> seedDemo(AppState a) async {
       FundItem(name: 'Vàng nhẫn 9999', type: AssetType.gold, qty: 2, unit: 'chỉ', buyPrice: 7500000, curPrice: 7500000, holder: 'Bà nội giữ', note: 'Bà nội tặng', date: now.subtract(const Duration(days: 80))),
       FundItem(name: 'Chứng chỉ quỹ', type: AssetType.other, amount: 7100000, holder: 'Ba giữ', note: 'Góp mỗi tháng', date: now.subtract(const Duration(days: 120))),
     ]);
-  a.goal = FundGoal(name: 'Học phí lớp 1', target: 120000000);
+  a.goals
+      ..clear()
+      ..addAll([FundGoal(name: 'Học phí lớp 1', target: 120000000), FundGoal(name: 'Du học', target: 800000000)]);
   a.changed('funds');
-  a.changed('goal');
+  a.changed('goals');
 
   a.vax.clear();
   for (final e in const {'hepb0': 0, 'bcg': 2, 'dpt1': 61, 'opv1': 61, 'rota1': 61, 'dpt2': 92, 'opv2': 92, 'rota2': 92, 'dpt3': 123, 'opv3': 123}.entries) {

@@ -11,7 +11,7 @@ import '../data/models.dart';
 import 'fund.dart';
 import 'quick_logs.dart';
 
-final _tagColors = <(Color, Color)>[
+List<(Color, Color)> get _tagColors => [
   (GB.p(Color(0xFFFBE3CF)), GB.f(Color(0xFF8A4A1E))),
   (GB.p(Color(0xFFE3E6F6)), GB.f(Color(0xFF3F4A8A))),
   (GB.p(Color(0xFFF8DEDF)), GB.f(Color(0xFF9A3F49))),
@@ -193,12 +193,15 @@ class _MoneyTabState extends State<MoneyTab> {
         radius: 26,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Expanded(child: Text('Số dư · $label', style: GB.body(13, w: FontWeight.w700, color: GB.inkMuted))),
+            Expanded(child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('Số dư · $label', style: GB.body(13, w: FontWeight.w700, color: GB.inkMuted)))),
             for (var i = 0; i < 4; i++)
               GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () => setState(() => period = i),
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 10, top: 6, bottom: 6),
+                child: Container(
+                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44), // vùng chạm tối thiểu 44
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
                   child: Text(const ['Tuần', 'Tháng', 'Năm', 'Tất cả'][i], style: GB.body(12.5, w: period == i ? FontWeight.w800 : FontWeight.w600, color: period == i ? GB.ink : GB.inkMuted)),
                 ),
               ),
@@ -221,7 +224,7 @@ class _MoneyTabState extends State<MoneyTab> {
         ]),
       ),
       const SizedBox(height: 10),
-      GlassField(controller: searchCtl, label: 'Tìm theo tên món, mã hàng, nơi mua', onChanged: (v) => setState(() => f.query = v.trim())),
+      GlassField(controller: searchCtl, label: 'Tìm theo tên món, nơi mua', onChanged: (v) => setState(() => f.query = v.trim())),
       const SizedBox(height: 8),
       SizedBox(
         height: 44,
@@ -632,8 +635,6 @@ class _MoneyAddScreenState extends State<MoneyAddScreen> {
             const FormHeader('Chi tiết', Icons.receipt_long_rounded, color: Color(0xFFFBE3CF), hint: 'Không bắt buộc'),
             GlassField(controller: title, label: 'Tên món / loại hàng', hint: 'Ví dụ: tã dán size M', icon: Icons.shopping_bag_rounded),
             const SizedBox(height: 10),
-            GlassField(controller: code, label: 'Mã hàng / SKU / mã vạch', icon: Icons.qr_code_2_rounded, iconColor: GB.info),
-            const SizedBox(height: 10),
             Row(children: [
               Expanded(child: GlassField(controller: qty, label: 'Số lượng', icon: Icons.numbers_rounded, iconColor: GB.ok, keyboard: const TextInputType.numberWithOptions(decimal: true), onChanged: (_) => _autoTotal())),
               const SizedBox(width: 10),
@@ -660,10 +661,7 @@ class _MoneyAddScreenState extends State<MoneyAddScreen> {
             const FormHeader('Ảnh', Icons.photo_camera_rounded, color: Color(0xFFDCEBF5), hint: 'Hoá đơn, sản phẩm. Ảnh chỉ lưu trên máy'),
             Wrap(spacing: 10, runSpacing: 10, children: [
               for (final p in photos) PhotoThumb(p, size: 72, onRemove: () => setState(() => photos.remove(p))),
-              AddPhotoButton(size: 72, onTap: () async {
-                final id = await pickAndStorePhoto(context);
-                if (id != null) setState(() => photos.add(id));
-              }),
+              AddPhotoButton(size: 72, onPicked: (id) => setState(() => photos.add(id))),
             ]),
           ]),
         ),

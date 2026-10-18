@@ -55,9 +55,39 @@ class PhotoThumb extends StatelessWidget {
   }
 }
 
+enum PhotoChoice { library, camera, remove }
+
+/// Menu chọn nguồn ảnh hiện ngay bên dưới khung ảnh ([context] là của chính khung đó).
+Future<PhotoChoice?> showPhotoMenu(BuildContext context, {String? removeLabel}) {
+  final box = context.findRenderObject() as RenderBox;
+  final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+  final topLeft = box.localToGlobal(Offset(0, box.size.height), ancestor: overlay);
+  final rect = Rect.fromLTWH(topLeft.dx, topLeft.dy, box.size.width, 0);
+  Widget item(IconData ic, String t, {Color? c}) => Row(children: [Icon(ic, size: 22, color: c ?? GB.accentDeep), const SizedBox(width: 12), Text(t, style: GB.body(14.5, w: FontWeight.w700, color: c))]);
+  return showMenu<PhotoChoice>(
+    context: context,
+    position: RelativeRect.fromRect(rect, Offset.zero & overlay.size),
+    color: GB.cream,
+    elevation: 8,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: GB.line)),
+    items: [
+      PopupMenuItem(value: PhotoChoice.library, height: 48, child: item(Icons.photo_library_rounded, 'Thư viện ảnh')),
+      PopupMenuItem(value: PhotoChoice.camera, height: 48, child: item(Icons.photo_camera_rounded, 'Chụp ảnh')),
+      if (removeLabel != null) PopupMenuItem(value: PhotoChoice.remove, height: 48, child: item(Icons.delete_outline_rounded, removeLabel, c: GB.alert)),
+    ],
+  );
+}
+
+/// Hiện menu dưới khung ảnh rồi chọn/chụp ảnh; trả về id ảnh đã lưu (null nếu huỷ).
+Future<String?> pickPhotoViaMenu(BuildContext context) async {
+  final c = await showPhotoMenu(context);
+  if (c == null || c == PhotoChoice.remove || !context.mounted) return null;
+  return pickAndStorePhoto(context, camera: c == PhotoChoice.camera);
+}
+
 class AddPhotoButton extends StatelessWidget {
-  const AddPhotoButton({super.key, required this.onTap, this.size = 64});
-  final VoidCallback onTap;
+  const AddPhotoButton({super.key, required this.onPicked, this.size = 64});
+  final ValueChanged<String> onPicked; // nhận id ảnh sau khi mẹ chọn từ menu hiện dưới nút
   final double size;
 
   @override
@@ -65,7 +95,10 @@ class AddPhotoButton extends StatelessWidget {
         button: true,
         label: 'Thêm ảnh',
         child: GestureDetector(
-          onTap: onTap,
+          onTap: () async {
+            final id = await pickPhotoViaMenu(context);
+            if (id != null) onPicked(id);
+          },
           child: Container(
             width: size,
             height: size,
@@ -168,4 +201,31 @@ Future<void> showOtherLogSheet(BuildContext context, {int initial = 0}) {
       ]);
     });
   });
+}
+
+/// Bắt đầu hoặc kết thúc giấc ngủ ngay (1 chạm), có Hoàn tác.
+void quickToggleSleep(BuildContext context) {
+  final act = app.activeSleep;
+  if (act == null) {
+    app.startSleep();
+    final started = app.activeSleep;
+    toast(context, 'Bé bắt đầu ngủ lúc ${GB.hm(DateTime.now())}', undo: () {
+      if (started != null) app.removeEntry(started.id);
+    });
+  } else {
+    final done = app.endSleep();
+    toast(context, 'Bé dậy rồi, ngủ ${GB.dur(done?.end?.difference(done.time) ?? Duration.zero)}', undo: () {
+      if (done != null) {
+        done.end = null;
+        app.changed('entries');
+      }
+    });
+  }
+}
+
+/// Ghi ngay một cữ tã ướt (1 thao tác), có Hoàn tác.
+void quickWetDiaper(BuildContext context) {
+  final e = Entry(type: T.diaper, time: DateTime.now(), data: {'kind': 'wet', 'amount': 'Vừa'});
+  app.addEntry(e);
+  toast(context, 'Đã ghi tã ướt', undo: () => app.removeEntry(e.id));
 }

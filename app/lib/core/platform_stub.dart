@@ -38,3 +38,6 @@ void disableBrowserHistory() {}
 Future<String?> offlineStatusJson() async => null;
 Future<void> offlineWarm() async {}
 Future<void> offlineReset() async {}
+
+/// Giữ màn hình luôn sáng khi đang bấm giờ bú hoặc hút (không bị tự khoá giữa chừng). Chỉ web.
+Future<void> keepScreenAwake(bool on) async {}

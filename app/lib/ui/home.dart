@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../core/art_catalog.dart';
 import '../core/kit.dart';
+import 'babies.dart';
 import '../core/pastel.dart';
 import '../core/theme.dart';
 import '../data/app_state.dart';
@@ -73,25 +74,22 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 8, 16, 100),
           children: [
             _header(owner, age.label, now),
+            _glance(now),
             ..._reminders(),
             const SizedBox(height: 10),
             _tiles(sleeping),
             const SizedBox(height: 10),
             Row(children: [
-              Expanded(child: _mini('Phân & tã', Icons.water_drop_rounded, GB.diaper, () => showDiaperSheet(context), art: 'poop_mustard')),
+              Expanded(child: _mini('Phân & tã', Icons.water_drop_rounded, GB.diaper, () => showDiaperSheet(context), art: 'poop_mustard', tint: const Color(0xFFFBF1D4), onLong: () => quickWetDiaper(context))),
               const SizedBox(width: 8),
-              Expanded(child: _mini('Nhiệt độ', Icons.thermostat_rounded, GB.health, () => showOtherLogSheet(context, initial: 0), art: 'ic_thermometer')),
+              Expanded(child: _mini('Nhiệt độ', Icons.thermostat_rounded, GB.health, () => showOtherLogSheet(context, initial: 0), art: 'ic_thermometer', tint: const Color(0xFFDCEBF5))),
               const SizedBox(width: 8),
-              Expanded(child: _mini('Thuốc', Icons.medication_rounded, GB.pump, () => showOtherLogSheet(context, initial: 1), art: 'ic_medicine')),
+              Expanded(child: _mini('Thuốc', Icons.medication_rounded, GB.pump, () => showOtherLogSheet(context, initial: 1), art: 'ic_medicine', tint: const Color(0xFFF8DEDF))),
               const SizedBox(width: 8),
-              Expanded(child: _mini('Ghi chú', Icons.edit_note_rounded, GB.feed, () => showOtherLogSheet(context, initial: 2), art: 'ic_note')),
+              Expanded(child: _mini('Ghi chú', Icons.edit_note_rounded, GB.feed, () => showOtherLogSheet(context, initial: 2), art: 'ic_note', tint: const Color(0xFFFBE3CF))),
             ]),
             const SizedBox(height: 12),
             _overview(now),
-            const SizedBox(height: 10),
-            const DayFeedCard(compact: true),
-            const SizedBox(height: 10),
-            _latest(now),
             const SizedBox(height: 10),
             IntrinsicHeight(
               child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -101,11 +99,15 @@ class _HomeScreenState extends State<HomeScreen> {
               ]),
             ),
             const SizedBox(height: 10),
+            const DayFeedCard(compact: true),
+            const SizedBox(height: 10),
+            _latest(now),
+            const SizedBox(height: 10),
+            _sleepToday(),
+            const SizedBox(height: 10),
             if (!sleeping) _nextUpCard() else _easyLink(),
             const SizedBox(height: 10),
             _leapCard(),
-            const SizedBox(height: 10),
-            _sleepToday(),
             const SizedBox(height: 14),
             _quote(now),
           ],
@@ -115,16 +117,59 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ───────── Đầu trang
+  // ───────── Tóm tắt nhanh: bú lần cuối, giấc ngủ, tã hôm nay (nhìn là biết, không cần mở gì)
+  Widget _glance(DateTime now) {
+    final lf = app.lastFeed;
+    final act = app.activeSleep;
+    final wake = app.lastWake;
+    final diapers = app.diaperCount(now);
+    final sleepVal = act != null
+        ? 'Đang ngủ ${GB.dur(now.difference(act.time))}'
+        : (wake != null ? 'Dậy ${GB.ago(wake, now)}' : 'Chưa ghi');
+    Widget cell(IconData ic, Color c, String label, String value) => Expanded(
+          child: Column(children: [
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(ic, size: 14, color: c),
+              const SizedBox(width: 4),
+              Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, style: GB.body(12, w: FontWeight.w700, color: GB.inkMuted)))),
+            ]),
+            const SizedBox(height: 3),
+            FittedBox(fit: BoxFit.scaleDown, child: Text(value, maxLines: 1, style: GB.body(14.5, w: FontWeight.w800))),
+          ]),
+        );
+    Widget sep() => Container(width: 1, height: 30, color: GB.line);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Semantics(
+        container: true,
+        label: 'Tóm tắt nhanh. Bú lần cuối ${lf == null ? 'chưa ghi' : GB.ago(lf.time, now)}. $sleepVal. Tã hôm nay $diapers.',
+        child: ExcludeSemantics(
+          child: GlassCard(
+            radius: 20,
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+            child: Row(children: [
+              cell(Icons.local_drink_rounded, GB.bottleDeep, 'Bú lần cuối', lf == null ? 'Chưa ghi' : GB.ago(lf.time, now)),
+              sep(),
+              cell(Icons.bedtime_rounded, GB.sleepDeep, 'Giấc ngủ', sleepVal),
+              sep(),
+              cell(Icons.water_drop_rounded, GB.pumpDeep, 'Tã hôm nay', '$diapers lần'),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _header(String owner, String ageLabel, DateTime now) {
     return SizedBox(
       height: 164,
       child: Stack(children: [
-        const Positioned(right: -4, top: 0, child: HeroPhoto(width: 150)),
-        const Positioned(right: 0, top: 0, child: ThemeToggle()),
+        // ảnh tròn nhỏ ở góc phải trên; nút sáng/tối nằm bên trái ảnh, không đè lên ô tên bé
+        const Positioned(right: 0, top: 4, child: HeroPhoto(width: 108)),
         Positioned(
           left: 0,
           top: 8,
-          right: 122,
+          right: 156,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Flexible(child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('Xin chào, $owner', style: GB.display(30, color: GB.title)))),
@@ -146,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => widget.goTab(1),
                 child: GlassCard(
                   radius: 22,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(Icons.calendar_today_rounded, size: 18, color: GB.inkMuted),
                     const SizedBox(width: 8),
@@ -159,14 +204,24 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 8),
             Flexible(
-              child: GlassCard(
-                radius: 22,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                child: FittedBox(fit: BoxFit.scaleDown, child: Text('${app.baby!.name} · $ageLabel', style: GB.body(13, w: FontWeight.w700, color: GB.accentDeep))),
+              child: Semantics(
+                button: true,
+                label: 'Chuyển bé. Đang xem ${app.baby!.name}',
+                child: GlassCard(
+                  radius: 22,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                  onTap: () => showBabySwitcher(context),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text('${app.baby!.name} · $ageLabel', style: GB.body(13, w: FontWeight.w700, color: GB.accentDeep)))),
+                    Icon(Icons.unfold_more_rounded, size: 18, color: GB.accentDeep),
+                  ]),
+                ),
               ),
             ),
           ]),
         ),
+        // nút sáng/tối đặt cuối Stack để luôn nằm trên cùng và nhận chạm
+        const Positioned(right: 108, top: 6, child: ThemeToggle()),
       ]),
     );
   }
@@ -176,9 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Expanded(child: ActivityTile(label: 'Hút sữa', art: 'ic_pump', tile: GB.pumpTile, deep: GB.pumpDeep, onTap: () => openPage(context, const PumpScreen()))),
       const SizedBox(width: 8),
-      Expanded(child: ActivityTile(label: 'Cho bú', art: 'ic_breast', tile: GB.breastTile, deep: GB.breastDeep, onTap: () => openPage(context, const FeedScreen(initialTab: 1)))),
-      const SizedBox(width: 8),
-      Expanded(child: ActivityTile(label: 'Bình sữa', art: 'ic_bottle', tile: GB.bottleTile, deep: GB.bottleDeep, onTap: () => openPage(context, const FeedScreen(initialTab: 0)))),
+      Expanded(child: ActivityTile(label: 'Ghi bú', art: 'ic_bottle', tile: GB.bottleTile, deep: GB.bottleDeep, onTap: () => openPage(context, const FeedScreen()))),
       const SizedBox(width: 10),
       Expanded(
         child: ActivityTile(
@@ -188,18 +241,23 @@ class _HomeScreenState extends State<HomeScreen> {
           deep: GB.sleepDeep,
           icon: sleeping ? Icons.stop_rounded : Icons.add_rounded,
           onTap: () => openPage(context, const SleepScreen()),
+          quickLabel: sleeping ? 'Bé dậy rồi (ghi ngay)' : 'Bắt đầu ngủ ngay',
+          onQuick: () => quickToggleSleep(context),
         ),
       ),
     ]);
   }
 
-  Widget _mini(String label, IconData icon, Color color, VoidCallback onTap, {String? art}) => Semantics(
+  Widget _mini(String label, IconData icon, Color color, VoidCallback onTap, {String? art, VoidCallback? onLong, Color? tint}) => Semantics(
         button: true,
         label: label,
+        onLongPressHint: onLong == null ? null : 'Ghi nhanh tã ướt',
         child: GlassCard(
           radius: 18,
           padding: const EdgeInsets.symmetric(vertical: 10),
+          tint: tint == null ? null : GB.p(tint), // nền pastel riêng để biểu tượng nổi lên
           onTap: onTap,
+          onLongPress: onLong,
           child: Column(children: [
             (art != null && (art == 'poop_mustard' || ArtCatalog.has(art))) ? SizedBox(height: 30, child: Art(art)) : Icon(icon, size: 22, color: color),
             const SizedBox(height: 3),
@@ -218,6 +276,19 @@ class _HomeScreenState extends State<HomeScreen> {
     final dMl = pctDelta(tt.total, ty.total);
     final dMin = pctDelta(bm, bmy);
     final dCnt = tt.count - ty.count;
+    final pumpMl = app.pumpedOn(now);
+    final dPump = pctDelta(pumpMl, app.pumpedOn(y));
+    final pumpCnt = app.pumpSessionsOn(now);
+    final pumpCntY = app.pumpSessionsOn(y);
+    final sleepMin = app.sleepOn(now).inMinutes;
+    final dSleep = pctDelta(sleepMin, app.sleepOn(y).inMinutes);
+    // Biểu tượng đậm màu trong vòng tròn nền nhạt để dễ nhìn hơn.
+    Widget badge(IconData ic, Color c) => Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(color: c.withValues(alpha: GB.dark ? .28 : .20), shape: BoxShape.circle),
+          child: Icon(ic, color: c, size: 18),
+        );
 
     Widget cell(Widget icon, String label, Widget value, Widget? delta) => Expanded(
           child: Container(
@@ -244,27 +315,40 @@ class _HomeScreenState extends State<HomeScreen> {
       trailing: 'Xem chi tiết',
       onTrailing: () => widget.goTab(2),
       padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
-      child: IntrinsicHeight(
-        child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          cell(Icon(Icons.water_drop_rounded, color: GB.pumpDeep, size: 24), 'Tổng sữa hôm nay', BigNumber(GB.thousands(tt.total), 'ml', size: 26), dMl == null ? null : DeltaChip(dMl.text, up: dMl.up)),
-          const SizedBox(width: 8),
-          cell(Icon(Icons.timer_outlined, color: GB.breastDeep, size: 24), 'Thời gian bú', BigNumber('$bm', 'phút', size: 26), dMin == null ? null : DeltaChip(dMin.text, up: dMin.up)),
-          const SizedBox(width: 8),
-          cell(const Art('ic_bottle', height: 26), 'Số cữ ăn', BigNumber('${tt.count}', 'cữ', size: 26), ty.count == 0 && tt.count == 0 ? null : DeltaChip('${dCnt >= 0 ? '+' : ''}$dCnt', up: dCnt >= 0)),
-        ]),
-      ),
+      child: Column(children: [
+        IntrinsicHeight(
+          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            cell(badge(Icons.local_drink_rounded, GB.bottleDeep), 'Sữa đã bú', BigNumber(GB.thousands(tt.total), 'ml', size: 26), dMl == null ? null : DeltaChip(dMl.text, up: dMl.up)),
+            const SizedBox(width: 8),
+            cell(badge(Icons.water_drop_rounded, GB.pumpDeep), 'Sữa đã hút', BigNumber(GB.thousands(pumpMl), 'ml', size: 26), dPump == null ? null : DeltaChip(dPump.text, up: dPump.up)),
+          ]),
+        ),
+        const SizedBox(height: 8),
+        IntrinsicHeight(
+          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            cell(badge(Icons.timer_outlined, GB.breastDeep), 'Thời gian bú', BigNumber('$bm', 'phút', size: 26), dMin == null ? null : DeltaChip(dMin.text, up: dMin.up)),
+            const SizedBox(width: 8),
+            cell(badge(Icons.favorite_rounded, GB.pumpDeep), 'Số cữ hút', BigNumber('$pumpCnt', 'cữ', size: 26), pumpCntY == 0 && pumpCnt == 0 ? null : DeltaChip('${pumpCnt - pumpCntY >= 0 ? '+' : ''}${pumpCnt - pumpCntY}', up: pumpCnt >= pumpCntY)),
+          ]),
+        ),
+        const SizedBox(height: 8),
+        IntrinsicHeight(
+          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            cell(badge(Icons.restaurant_rounded, GB.bottleDeep), 'Số cữ bú', BigNumber('${tt.count}', 'cữ', size: 26), ty.count == 0 && tt.count == 0 ? null : DeltaChip('${dCnt >= 0 ? '+' : ''}$dCnt', up: dCnt >= 0)),
+            const SizedBox(width: 8),
+            cell(badge(Icons.bedtime_rounded, GB.sleepDeep), 'Thời gian ngủ', BigNumber(GB.num1(sleepMin / 60), 'giờ', size: 26), dSleep == null ? null : DeltaChip(dSleep.text, up: dSleep.up)),
+          ]),
+        ),
+      ]),
     );
   }
 
-  // ───────── Cữ gần nhất
+  // ───────── Cữ bú gần nhất và cữ hút gần nhất (hai thẻ riêng)
   Widget _latest(DateTime now) {
     final f = app.ofType(T.feed).firstOrNull;
     final p = app.ofType(T.pump).firstOrNull;
-    final e = f == null ? p : (p == null ? f : (p.time.isAfter(f.time) ? p : f));
-    Widget body;
-    if (e == null) {
-      body = const EmptyState('Chưa có cữ nào được ghi.');
-    } else {
+
+    Widget row(Entry e) {
       final isPump = e.type == T.pump;
       final breast = !isPump && e.str('method') == 'breast';
       final art = isPump ? 'ic_pump' : (breast ? 'ic_breast' : 'ic_bottle');
@@ -272,31 +356,44 @@ class _HomeScreenState extends State<HomeScreen> {
       final title = isPump ? 'Hút sữa' : (breast ? 'Cho bú' : 'Bình sữa');
       final end = e.end ?? e.time;
       final mins = e.end == null ? null : e.end!.difference(e.time).inMinutes;
-      body = Row(children: [
-        Container(width: 52, height: 52, padding: const EdgeInsets.all(7), decoration: BoxDecoration(color: tile.withValues(alpha: .6), shape: BoxShape.circle), child: Art(art)),
+      return Row(children: [
+        Container(width: 48, height: 48, padding: const EdgeInsets.all(7), decoration: BoxDecoration(color: tile.withValues(alpha: .6), shape: BoxShape.circle), child: Art(art)),
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Expanded(child: Text(title, style: GB.display(17, w: FontWeight.w800))),
+              Expanded(child: Text(title, style: GB.display(16, w: FontWeight.w800))),
               SoftPill(GB.ago(end), arrow: false),
             ]),
-            const SizedBox(height: 4),
-            Text(mins == null || mins < 1 ? GB.hm(e.time) : '${GB.hm(e.time)} – ${GB.hm(end)} ($mins phút)', style: GB.body(13.5, color: GB.inkMuted)),
+            const SizedBox(height: 3),
+            Text(mins == null || mins < 1 ? GB.hm(e.time) : '${GB.hm(e.time)} – ${GB.hm(end)} ($mins phút)', style: GB.body(13, color: GB.inkMuted)),
             if (e.ml > 0)
               Padding(
                 padding: const EdgeInsets.only(top: 2),
                 child: Row(children: [
                   const Icon(Icons.water_drop_rounded, size: 16, color: Color(0xFFF2B632)),
                   const SizedBox(width: 4),
-                  Text('${e.ml} ml${e.data['est'] == true ? ' (ước tính)' : ''}', style: GB.body(15, w: FontWeight.w800)),
+                  Text('${e.ml} ml${e.data['est'] == true ? ' (ước tính)' : ''}', style: GB.body(14.5, w: FontWeight.w800)),
                 ]),
               ),
           ]),
         ),
       ]);
     }
-    return SectionCard(title: 'Cữ gần nhất', icon: Icons.schedule_rounded, iconColor: GB.pumpDeep, trailing: e == null ? null : 'Lịch sử', onTrailing: () => widget.goTab(1), child: body);
+
+    Widget card(String title, IconData icon, Color c, Entry? e) => SectionCard(
+          title: title,
+          icon: icon,
+          iconColor: c,
+          trailing: e == null ? null : 'Lịch sử',
+          onTrailing: () => widget.goTab(1),
+          child: e == null ? const EmptyState('Chưa có cữ nào được ghi.') : row(e),
+        );
+    return Column(children: [
+      card('Cữ bú gần nhất', Icons.local_drink_rounded, GB.bottleDeep, f),
+      const SizedBox(height: 10),
+      card('Cữ hút gần nhất', Icons.water_drop_rounded, GB.pumpDeep, p),
+    ]);
   }
 
   // ───────── Dải 24 giờ
@@ -453,7 +550,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ───────── EASY: giờ ngủ kế tiếp
   Widget _nextUpCard() {
     final age = app.age.adjDays;
-    final ww = Easy.wakeWindow(age);
+    final ww = Easy.wakeFor(app.settings, age);
     final wake = app.lastWake;
     final cycle = Easy.cycleFor(app.settings, age);
     final lastFeed = app.lastFeed;

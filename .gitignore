@@ -17,3 +17,5 @@ design/icons/old/
 design/ref/
 PRODUCT_DIRECTION.md
 docs/ROADMAP.md
+design/tool/e2e/out/
+__pycache__/

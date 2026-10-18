@@ -1,8 +1,8 @@
+import 'calendar_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../core/kit.dart';
 import '../core/pastel.dart';
-import '../core/pickers.dart';
 import '../core/theme.dart';
 import '../data/app_state.dart';
 import '../data/models.dart';
@@ -34,7 +34,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String q = '';
   final search = TextEditingController();
 
-  static final _kinds = <_Kind>[
+  static List<_Kind>? _kindsCache;
+  static bool? _kindsDark;
+
+  // Bảng loại ghi theo màu hiện tại: dựng lại khi đổi sáng/tối (không giữ màu cũ), còn lại dùng bản đã dựng cho nhẹ.
+  static List<_Kind> get _kinds {
+    if (_kindsCache == null || _kindsDark != GB.dark) {
+      _kindsCache = _buildKinds();
+      _kindsDark = GB.dark;
+    }
+    return _kindsCache!;
+  }
+
+  static List<_Kind> _buildKinds() => [
     _Kind(null, 'Tất cả', null, Icons.grid_view_rounded, GB.pumpTile, GB.accentDeep),
     _Kind(T.feed, 'Bú', 'ic_breast', null, GB.breastTile, GB.breastDeep),
     _Kind(T.pump, 'Hút sữa', 'ic_pump', null, GB.bottleTile, GB.bottleDeep),
@@ -175,7 +187,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _pickDay() async {
-    final d = await pickDateTime(context, day ?? DateTime.now(), timeToo: false, last: DateTime.now(), title: 'Xem nhật ký ngày');
+    // Lịch cả tháng: chọn một ngày rồi "Mở nhật ký ngày này" để lọc nhật ký theo ngày đó
+    final d = await openPage<DateTime?>(context, CalendarScreen(initial: day));
     if (d != null) setState(() => day = AppState.dayStart(d));
   }
 
@@ -262,7 +275,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               onTap: _pickDay,
               child: Semantics(
                 button: true,
-                label: 'Chọn ngày',
+                label: 'Lịch tháng',
                 child: Container(
                   width: 48,
                   height: 48,

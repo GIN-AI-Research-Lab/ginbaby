@@ -7,6 +7,8 @@ import '../data/app_state.dart';
 import '../domain/articles.dart';
 import '../domain/vaccines.dart';
 import 'articles_screen.dart';
+import 'baby_profile.dart';
+import 'babies.dart';
 import 'family_screen.dart';
 import 'features.dart';
 import 'hero_photo.dart';
@@ -40,12 +42,11 @@ class GuideTab extends StatelessWidget {
             SizedBox(
               height: 140,
               child: Stack(children: [
-                const Positioned(right: -4, top: 0, child: HeroPhoto(width: 130)),
-                const Positioned(right: 0, top: 0, child: ThemeToggle()),
+                const Positioned(right: 0, top: 4, child: HeroPhoto(width: 108, editable: true)),
                 Positioned(
                   left: 0,
                   top: 10,
-                  right: 122,
+                  right: 156,
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     FittedBox(
                       fit: BoxFit.scaleDown,
@@ -60,20 +61,17 @@ class GuideTab extends StatelessWidget {
                     Text('Sức khoẻ, kiến thức và góc nghỉ của mẹ', style: GB.script(13.5)),
                   ]),
                 ),
+                const Positioned(right: 108, top: 6, child: ThemeToggle()),
               ]),
             ),
+            const BabyStrip(),
+            const SizedBox(height: 10),
             GlassCard(
               radius: 26,
               padding: const EdgeInsets.all(14),
               child: Column(children: [
                 Row(children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(color: GB.accentSoft, shape: BoxShape.circle),
-                    child: Text(app.baby!.name.characters.first.toUpperCase(), style: GB.display(28, color: GB.title)),
-                  ),
+                  const BabyAvatar(size: 64, editable: true),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -93,6 +91,10 @@ class GuideTab extends StatelessWidget {
                 ]),
               ]),
             ),
+            const SizedBox(height: 10),
+            const BabyInfoCard(),
+            const SizedBox(height: 10),
+            const QuickSettingsCard(),
             const SizedBox(height: 10),
             GlassCard(
               radius: 22,

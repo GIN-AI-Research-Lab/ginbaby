@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../core/kit.dart';
+import '../core/platform.dart';
 import '../core/pickers.dart';
 import '../core/theme.dart';
 import '../data/app_state.dart';
@@ -14,21 +15,29 @@ import 'widgets.dart';
 
 /// Ghi bú: bình (vuốt mực sữa) hoặc bú mẹ trực tiếp (bấm giờ), kèm đánh giá theo tuổi và cân nặng.
 class FeedScreen extends StatefulWidget {
-  const FeedScreen({super.key, this.initialTab = 0});
-  final int initialTab;
+  const FeedScreen({super.key, this.initialTab});
+  final int? initialTab; // null: tự chọn theo lần ghi gần nhất
 
   @override
   State<FeedScreen> createState() => _FeedScreenState();
 }
 
 class _FeedScreenState extends State<FeedScreen> {
-  late int tab = widget.initialTab;
+  late int tab = widget.initialTab ?? _autoTab();
   bool mom = true;
   int ml = 120;
   DateTime time = DateTime.now();
   FridgeItem? fridgeBottle;
   Timer? _t;
   int? estOverride;
+
+  /// Mở đúng tab theo thói quen: đang bấm giờ bú thì tab bú; không thì theo lần ghi gần nhất; chưa có thì theo cách ăn của bé.
+  static int _autoTab() {
+    if (app.settings.breastStart != null) return 1;
+    final last = app.lastFeed;
+    if (last != null) return last.str('method') == 'breast' ? 1 : 0;
+    return app.baby?.mode == FeedMode.breast ? 1 : 0;
+  }
 
   @override
   void initState() {
@@ -44,12 +53,15 @@ class _FeedScreenState extends State<FeedScreen> {
     if (app.baby!.mode == FeedMode.formula) mom = false;
     if (app.settings.breastStart != null) tab = 1;
     _t = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted && app.settings.breastStart != null && app.settings.breastEnd == null) setState(() {});
+      final timing = mounted && app.settings.breastStart != null && app.settings.breastEnd == null;
+      keepScreenAwake(timing); // đang bấm giờ bú thì không để màn hình tự khoá
+      if (timing) setState(() {});
     });
   }
 
   @override
   void dispose() {
+    keepScreenAwake(false);
     _t?.cancel();
     super.dispose();
   }
@@ -78,8 +90,15 @@ class _FeedScreenState extends State<FeedScreen> {
     final age = app.age.adjDays;
     final a = FeedingRef.feed(ml, age, expressedMilk: mom);
     final fb = fridgeBottle;
-    app.addBottle(ml: ml, source: mom ? 'mom' : 'formula', fridgeId: fb?.id, time: time);
+    final saved = app.addBottle(ml: ml, source: mom ? 'mom' : 'formula', fridgeId: fb?.id, time: time);
     if (!mounted) return;
+    // Lượng bình thường và không dùng sữa trong tủ: chỉ báo ngắn kèm Hoàn tác, đỡ một lần chạm "Xong".
+    if (a.verdict == Verdict.ok && fb == null) {
+      final nav = Navigator.of(context);
+      toast(context, 'Đã ghi ${ml}ml · trong mức thường gặp', undo: () => app.removeEntry(saved.id));
+      nav.pop();
+      return;
+    }
     await showGlassSheet(context, builder: (ctx) {
       final tot = app.feedTotals(time);
       final da = FeedingRef.day(age, app.weightKg, tot.total);
@@ -163,9 +182,9 @@ class _FeedScreenState extends State<FeedScreen> {
                 ),
                 const SizedBox(height: 8),
                 Row(children: [
-                  RoundIconButton(icon: Icons.remove_rounded, label: 'Giảm 10ml', onTap: () => setState(() => ml = math.max(0, ml - 10)), size: 52),
+                  RoundIconButton(icon: Icons.remove_rounded, label: 'Giảm 5ml', onTap: () => setState(() => ml = math.max(0, ml - 5)), size: 52),
                   const SizedBox(width: 10),
-                  RoundIconButton(icon: Icons.add_rounded, label: 'Tăng 10ml', filled: true, onTap: () => setState(() => ml = math.min(cap, ml + 10)), size: 52),
+                  RoundIconButton(icon: Icons.add_rounded, label: 'Tăng 5ml', filled: true, onTap: () => setState(() => ml = math.min(cap, ml + 5)), size: 52),
                 ]),
                 const SizedBox(height: 10),
                 Text('Vuốt trên bình để chỉnh.\nThường gặp ${range.text()}', style: GB.body(12.5, color: GB.inkMuted, height: 1.4)),
@@ -287,8 +306,8 @@ class _FeedScreenState extends State<FeedScreen> {
     String clock(Duration d) => '${GB.two(d.inMinutes)}:${GB.two(d.inSeconds % 60)}';
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Seg(labels: const ['Trái', 'Phải', 'Hai bên'], index: const ['L', 'R', 'B'].indexOf(s.breastSide), height: 40, onChanged: (i) {
-        s.breastSide = const ['L', 'R', 'B'][i];
+      Seg(labels: const ['Trái', 'Phải'], index: s.breastSide == 'R' ? 1 : 0, height: 40, onChanged: (i) {
+        s.breastSide = const ['L', 'R'][i]; // bé chỉ bú được một bên mỗi lúc
         app.settingsChanged();
         setState(() {});
       }),
@@ -354,11 +373,11 @@ class _FeedScreenState extends State<FeedScreen> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(child: Text('Lượng sữa ước tính', style: GB.body(13.5, w: FontWeight.w700))),
-            RoundIconButton(icon: Icons.remove_rounded, label: 'Giảm 10ml', size: 40, onTap: () => setState(() => estOverride = math.max(0, est - 10))),
+            RoundIconButton(icon: Icons.remove_rounded, label: 'Giảm 5ml', size: 40, onTap: () => setState(() => estOverride = math.max(0, est - 5))),
             const SizedBox(width: 10),
             SizedBox(width: 64, child: Text('~${est}ml', textAlign: TextAlign.center, style: GB.body(16, w: FontWeight.w800))),
             const SizedBox(width: 10),
-            RoundIconButton(icon: Icons.add_rounded, label: 'Tăng 10ml', size: 40, filled: true, onTap: () => setState(() => estOverride = est + 10)),
+            RoundIconButton(icon: Icons.add_rounded, label: 'Tăng 5ml', size: 40, filled: true, onTap: () => setState(() => estOverride = est + 5)),
           ]),
           const SizedBox(height: 6),
           Text('Bú trực tiếp không đo được. Số này ước tính theo tuổi và thời gian bú (Kent 2006: trung bình ~106–126ml mỗi cữ lúc 1–6 tháng), chỉ để tham khảo.', style: GB.body(11.5, color: GB.inkMuted, height: 1.4)),

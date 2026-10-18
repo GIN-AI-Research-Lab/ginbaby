@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
 
 import '../core/kit.dart';
 import '../core/pickers.dart';
@@ -100,7 +101,7 @@ class EntryRow extends StatelessWidget {
           Container(width: 10, height: 10, decoration: BoxDecoration(color: kindColor(e.type), shape: BoxShape.circle)),
           const SizedBox(width: 12),
           Expanded(child: Text(entryTitle(e), style: GB.body(14.5))),
-          if (e.data['photo'] != null) Icon(Icons.photo_camera_rounded, size: 16, color: GB.inkMuted),
+          if (entryPhoto(e) != null) ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.memory(entryPhoto(e)!, width: 36, height: 36, fit: BoxFit.cover, gaplessPlayback: true)),
         ]),
       ),
     );
@@ -108,6 +109,12 @@ class EntryRow extends StatelessWidget {
 }
 
 /// Sửa giờ / xoá một bản ghi.
+/// Ảnh đính kèm của một bản ghi (nếu có và đã nạp), dùng để hiển thị lại sau khi lưu.
+Uint8List? entryPhoto(Entry e) {
+  final id = e.data['photo'];
+  return id is String ? app.photo(id) : null;
+}
+
 Future<void> showEntrySheet(BuildContext context, Entry e) {
   return showGlassSheet(context, builder: (ctx) {
     return StatefulBuilder(builder: (ctx, setS) {
@@ -118,6 +125,10 @@ Future<void> showEntrySheet(BuildContext context, Entry e) {
           Expanded(child: Text(entryTitle(e), style: GB.display(20, w: FontWeight.w700))),
         ]),
         const SizedBox(height: 14),
+        if (entryPhoto(e) != null) ...[
+          ClipRRect(borderRadius: BorderRadius.circular(18), child: Image.memory(entryPhoto(e)!, width: double.infinity, height: 200, fit: BoxFit.cover, gaplessPlayback: true)),
+          const SizedBox(height: 12),
+        ],
         _row('Thời gian', GB.dmyhm(e.time), () async {
           final d = await pickDateTime(ctx, e.time);
           if (d != null) {

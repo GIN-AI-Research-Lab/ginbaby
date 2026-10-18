@@ -1,3 +1,4 @@
+import 'calendar_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../core/art_catalog.dart';
@@ -74,8 +75,7 @@ String _leapSub() {
 final List<Feature> kFeatures = [
   // Ghi chép hằng ngày
   Feature('pump', 'Hút sữa', Icons.water_drop_rounded, const Color(0xFFFDE3E5), 'log', art: 'ic_pump', page: () => const PumpScreen(), sub: () => 'Ghi lượng sữa hai bên'),
-  Feature('breast', 'Cho bú', Icons.favorite_rounded, const Color(0xFFFDEBDF), 'log', art: 'ic_breast', page: () => const FeedScreen(initialTab: 1), sub: () => 'Đồng hồ bú trái, phải'),
-  Feature('bottle', 'Bình sữa', Icons.local_drink_rounded, const Color(0xFFEFE6F6), 'log', art: 'ic_bottle', page: () => const FeedScreen(initialTab: 0), sub: () => 'Ghi lượng ml, sữa mẹ hoặc công thức'),
+  Feature('feed', 'Ghi bú', Icons.local_drink_rounded, const Color(0xFFEFE6F6), 'log', art: 'ic_bottle', page: () => const FeedScreen(), sub: () => 'Bình sữa (ml) và bú mẹ trực tiếp (bấm giờ)'),
   Feature('sleep', 'Giấc ngủ', Icons.bedtime_rounded, const Color(0xFFE3EBDD), 'log', art: 'ic_moon', page: () => const SleepScreen(), sub: () => app.activeSleep != null ? 'Bé đang ngủ' : 'Ngủ ngay, dậy rồi'),
   Feature('diaper', 'Phân và tã', Icons.baby_changing_station_rounded, const Color(0xFFFBF1D4), 'log', art: 'poop_mustard', page: () => const DiaperScreen(), sub: () => 'Màu, kết cấu, số lượng'),
   Feature('temp', 'Nhiệt độ', Icons.thermostat_rounded, const Color(0xFFDCEBF5), 'log', art: 'ic_thermometer', page: () => const HealthHub(initial: 0), sub: () => 'Theo dõi sốt'),
@@ -87,7 +87,6 @@ final List<Feature> kFeatures = [
     final w = app.measurements.where((m) => m.weightKg != null).firstOrNull;
     return w == null ? 'Biểu đồ chuẩn WHO' : '${GB.num1(w.weightKg!)}kg · chuẩn WHO';
   }),
-  Feature('health', 'Sức khoẻ', Icons.monitor_heart_rounded, const Color(0xFFDCEBF5), 'health', art: 'ic_health', page: () => const HealthHub(), sub: () => 'Nhiệt độ, thuốc, hẹn, mốc, răng'),
   Feature('appt', 'Lịch hẹn khám', Icons.event_rounded, const Color(0xFFE6E4F6), 'health', art: 'ic_clock', page: () => const HealthHub(initial: 2), sub: () => 'Khám, tái khám, nhắc hẹn'),
   Feature('teeth', 'Mọc răng', Icons.tag_faces_rounded, const Color(0xFFFCE0E2), 'health', art: 'ic_health', page: () => const HealthHub(initial: 4), sub: () => 'Đánh dấu răng đã mọc'),
   Feature('memory', 'Nhật ký mốc', Icons.child_friendly_rounded, const Color(0xFFFBE3CF), 'health', art: 'ic_milestone', page: () => const MemoryJournalScreen(), sub: () => '${app.memos.length} kỷ niệm · thẻ chia sẻ'),
@@ -107,6 +106,7 @@ final List<Feature> kFeatures = [
   // Xem lại và tổng kết
   Feature('history', 'Lịch sử', Icons.receipt_long_rounded, const Color(0xFFFDE3E5), 'view', art: 'ic_note', tab: kTabHistory, sub: () => 'Mọi lần ghi theo ngày'),
   Feature('stats', 'Thống kê', Icons.bar_chart_rounded, const Color(0xFFE6DEF5), 'view', art: 'ic_growth', tab: kTabStats, sub: () => 'Ngày, tuần, tháng'),
+  Feature('calendar', 'Lịch và việc cần làm', Icons.calendar_month_rounded, const Color(0xFFE6E4F6), 'view', art: 'ic_clock', page: () => const CalendarScreen(), sub: () => 'Lịch tháng, kế hoạch, lịch hẹn'),
   Feature('recap', 'Thẻ tổng kết tuần', Icons.auto_awesome_rounded, const Color(0xFFF8E9A8), 'view', art: 'ic_star', page: () => RecapScreen(weekStart: Stats.weekStart(DateTime.now())), sub: () => 'Ảnh chia sẻ cả tuần'),
   // Tài khoản
   Feature('profile', 'Hồ sơ của bé', Icons.person_rounded, const Color(0xFFFBE3CF), 'account', art: 'ic_family', tab: kTabProfile, sub: () => app.baby == null ? '' : '${app.baby!.name} · ${app.age.label}'),

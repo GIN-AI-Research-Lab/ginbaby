@@ -9,8 +9,9 @@ import '../data/models.dart';
 
 /// Nhập hồ sơ bé lần đầu (và dùng để sửa hồ sơ trong Cài đặt).
 class Onboarding extends StatefulWidget {
-  const Onboarding({super.key, this.edit = false});
+  const Onboarding({super.key, this.edit = false, this.addNew = false});
   final bool edit;
+  final bool addNew; // thêm một bé mới (bé thứ hai trở đi)
 
   @override
   State<Onboarding> createState() => _OnboardingState();
@@ -31,7 +32,7 @@ class _OnboardingState extends State<Onboarding> {
   @override
   void initState() {
     super.initState();
-    final b = app.baby;
+    final b = widget.addNew ? null : app.baby;
     if (b != null) {
       name.text = b.name;
       sex = b.sex;
@@ -51,13 +52,17 @@ class _OnboardingState extends State<Onboarding> {
     super.dispose();
   }
 
-  void _finish() {
+  Future<void> _finish() async {
     final b = Baby(name: name.text.trim().isEmpty ? 'Bé' : name.text.trim(), sex: sex, dob: dob, birthWeightKg: birthW, gestWeeks: preterm ? gest : 40, mode: mode);
-    app.saveBaby(b);
-    if (curTouched && (curW - birthW).abs() > .001 && app.measurements.isEmpty) {
-      app.addMeasurement(Measurement(date: DateTime.now(), weightKg: curW));
+    if (widget.addNew) {
+      await app.addBaby(b);
+    } else {
+      app.saveBaby(b);
     }
-    if (widget.edit) Navigator.of(context).pop();
+    if (curTouched && (curW - app.weightKg).abs() > .001) {
+      app.setCurrentWeight(curW);
+    }
+    if ((widget.edit || widget.addNew) && mounted) Navigator.of(context).pop();
   }
 
   Widget _stepper(String label, double v, ValueChanged<double> on, {double min = 0.8, double max = 12}) {
@@ -88,7 +93,7 @@ class _OnboardingState extends State<Onboarding> {
           Padding(
             padding: EdgeInsets.fromLTRB(20, top + 16, 20, 0),
             child: Row(children: [
-              if (widget.edit || step > 0)
+              if (widget.edit || widget.addNew || step > 0)
                 RoundIconButton(icon: Icons.arrow_back_ios_new_rounded, label: 'Quay lại', size: 44, onTap: () => step > 0 ? setState(() => step--) : Navigator.of(context).pop())
               else
                 const SizedBox(width: 44),
@@ -107,14 +112,14 @@ class _OnboardingState extends State<Onboarding> {
           Padding(
             padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + MediaQuery.of(context).padding.bottom),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              BigButton(last ? (widget.edit ? 'Lưu hồ sơ' : 'Bắt đầu') : 'Tiếp tục', icon: last ? Icons.check_rounded : Icons.arrow_forward_rounded, onTap: () {
+              BigButton(last ? (widget.edit ? 'Lưu hồ sơ' : (widget.addNew ? 'Thêm bé' : 'Bắt đầu')) : 'Tiếp tục', icon: last ? Icons.check_rounded : Icons.arrow_forward_rounded, onTap: () {
                 if (!last) {
                   setState(() => step++);
                 } else {
                   _finish();
                 }
               }),
-              if (!widget.edit && step == 0) ...[
+              if (!widget.edit && !widget.addNew && step == 0) ...[
                 const SizedBox(height: 8),
                 GestureDetector(
                   onTap: () async => seedDemo(app),
@@ -129,7 +134,7 @@ class _OnboardingState extends State<Onboarding> {
   }
 
   Widget _s1() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(widget.edit ? 'Hồ sơ của bé' : 'Chào mẹ, mình làm quen với bé nhé', style: GB.display(30, color: GB.title)),
+        Text(widget.edit ? 'Hồ sơ của bé' : (widget.addNew ? 'Thêm bé mới' : 'Chào mẹ, mình làm quen với bé nhé'), style: GB.display(30, color: GB.title)),
         const SizedBox(height: 6),
         Text('Thông tin này giúp app đánh giá lượng sữa, giấc ngủ và lịch tiêm đúng theo tuổi của bé. Dữ liệu chỉ lưu trên máy của mẹ.', style: GB.body(14, color: GB.inkMuted, height: 1.45)),
         const SizedBox(height: 20),

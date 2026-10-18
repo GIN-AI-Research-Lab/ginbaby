@@ -70,6 +70,8 @@ flutter:
   assets:
     - assets/art/
     - assets/art_dark/
+    - assets/art_s/
+    - assets/art_dark_s/
 
   fonts:
     - family: Inter

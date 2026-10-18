@@ -12,6 +12,8 @@ from PIL import Image
 
 SRC = r'F:\Project Ai\GinBaby\app\assets\art'
 DST = r'F:\Project Ai\GinBaby\app\assets\art_dark'
+BASE = os.path.dirname(SRC)
+SMALL = 192
 os.makedirs(DST, exist_ok=True)
 
 
@@ -24,7 +26,35 @@ def rgb_to_hsv(a):
     return mx, s, d
 
 
+def defringe(arr):
+    """Bỏ viền sáng quanh hình: pixel bán trong suốt lấy màu của các pixel đặc gần nhất (không còn quầng trắng/kem
+    của nền cũ), rồi co nhẹ độ trong suốt để mép mịn, không răng cưa sáng."""
+    rgb = arr[..., :3].astype(np.float32) / 255
+    al = arr[..., 3].astype(np.float32) / 255
+    core = al > 0.92
+    col = np.where(core[..., None], rgb, 0).astype(np.float32)
+    have = core.astype(np.float32)
+    fill = core.copy()
+    for _ in range(6):
+        sh = [(dy, dx) for dy in (-1, 0, 1) for dx in (-1, 0, 1) if (dy, dx) != (0, 0)]
+        acc = np.zeros_like(col)
+        cnt = np.zeros_like(have)
+        for dy, dx in sh:
+            acc += np.roll(np.roll(col * have[..., None], dy, 0), dx, 1)
+            cnt += np.roll(np.roll(have, dy, 0), dx, 1)
+        new = (cnt > 0) & (~fill)
+        col[new] = acc[new] / cnt[new][:, None]
+        have[new] = 1
+        fill |= new
+    out_rgb = np.where(core[..., None], rgb, np.where(fill[..., None], col, rgb))
+    # co độ trong suốt: mép mờ (<0.35) biến mất, phần còn lại kéo giãn
+    al2 = np.clip((al - 0.30) / 0.60, 0, 1)
+    res = np.concatenate([out_rgb, al2[..., None]], axis=-1)
+    return (np.clip(res, 0, 1) * 255).astype(np.uint8)
+
+
 def process(arr):
+    arr = defringe(arr)
     a = arr[..., 3:4]
     rgb = arr[..., :3].astype(np.float32) / 255
     mx, s, d = rgb_to_hsv(rgb)
@@ -51,14 +81,53 @@ def process(arr):
     return (np.clip(res, 0, 1) * 255).astype(np.uint8)
 
 
+def hero_pass(arr):
+    """Tranh lớn (mẹ bế bé, mẹ hút sữa...) ở nền tối: bóp mép trong suốt 2 px để hết viền kem quanh tóc/áo,
+    hạ vùng sáng chói (da, áo trắng) xuống tông tím khói cho khớp nền."""
+    from PIL import ImageFilter
+    # viền kem cứng quanh tóc/áo: điểm sáng, gần trắng nằm trong dải 10 px sát mép -> trong suốt
+    inner = np.asarray(Image.fromarray(arr[..., 3], 'L').filter(ImageFilter.MinFilter(7))) > 128
+    f = arr[..., :3].astype(np.float32) / 255
+    mx, mn = f.max(-1), f.min(-1)
+    hair = (f[..., 0] > f[..., 2] + 0.12) & (mx < 0.80) & (arr[..., 3] > 200)
+    near_hair = np.asarray(Image.fromarray((hair * 255).astype(np.uint8), 'L').filter(ImageFilter.MaxFilter(9))) > 128
+    rim = near_hair & (~inner) & (mx > 0.84) & ((mx - mn) < 0.16)
+    arr = arr.copy()
+    arr[rim, 3] = 0
+    a = Image.fromarray(arr[..., 3], 'L').filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(0.9))
+    al = np.asarray(a).astype(np.float32) / 255
+    al = np.clip((al - 0.15) / 0.7, 0, 1)
+    rgb = arr[..., :3].astype(np.float32) / 255
+    lum = (0.2126 * rgb[..., 0] + 0.7152 * rgb[..., 1] + 0.0722 * rgb[..., 2])[..., None]
+    k = np.clip((lum - 0.55) / 0.45, 0, 1)
+    tint = np.array([0.80, 0.72, 0.88], dtype=np.float32)
+    rgb = rgb * (1 - 0.30 * k) + rgb * tint * 0.30 * k
+    rgb = rgb * 0.88
+    return (np.clip(np.concatenate([rgb, al[..., None]], -1), 0, 1) * 255).astype(np.uint8)
+
+
+def small(img, path):
+    if max(img.size) > SMALL:
+        r = SMALL / max(img.size)
+        img = img.resize((round(img.width * r), round(img.height * r)), Image.LANCZOS)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    img.save(path, optimize=True)
+
+
 def main():
     names = [f[:-4] for f in os.listdir(SRC) if f.endswith('.png')]
     if len(sys.argv) > 1:
         names = [n for n in names if n in sys.argv[1:]]
     for n in names:
         im = Image.open(os.path.join(SRC, n + '.png')).convert('RGBA')
-        out = Image.fromarray(process(np.asarray(im)), 'RGBA')
+        arr = process(np.asarray(im))
+        if n.startswith('hero_'):
+            arr = hero_pass(arr)
+        out = Image.fromarray(arr, 'RGBA')
         out.save(os.path.join(DST, n + '.png'), optimize=True)
+        if not n.startswith('hero_'):
+            small(im, os.path.join(BASE, 'art_s', n + '.png'))
+            small(out, os.path.join(BASE, 'art_dark_s', n + '.png'))
     print('done', len(names))
 
 

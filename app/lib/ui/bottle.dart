@@ -12,7 +12,7 @@ class BottleView extends StatefulWidget {
     required this.ml,
     required this.onChanged,
     this.cap = 240,
-    this.step = 10,
+    this.step = 5,
     this.color,
     this.width = 204,
     this.interactive = true,

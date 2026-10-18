@@ -147,3 +147,22 @@ Future<void> offlineReset() async {
     await globalContext.callMethod<JSPromise<JSAny?>>('ginbabyOfflineReset'.toJS).toDart;
   } catch (_) {}
 }
+
+web.WakeLockSentinel? _wakeLock;
+
+/// Giữ màn hình luôn sáng (Screen Wake Lock) khi [on], nhả khi tắt. Trình duyệt không hỗ trợ thì bỏ qua.
+Future<void> keepScreenAwake(bool on) async {
+  try {
+    if (on) {
+      if (_wakeLock != null && !_wakeLock!.released) return;
+      if (!web.window.navigator.has('wakeLock')) return;
+      _wakeLock = await web.window.navigator.wakeLock.request('screen').toDart;
+    } else {
+      final l = _wakeLock;
+      _wakeLock = null;
+      await l?.release().toDart;
+    }
+  } catch (_) {
+    // bị từ chối (pin yếu, tab ẩn...): bỏ qua, màn hình vẫn dùng được bình thường
+  }
+}
